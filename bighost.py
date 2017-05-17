@@ -6,9 +6,12 @@ import os
 import docker
 
 from mininet.net import Mininet
-from mininet.node import Controller
+from mininet.node import Controller, CPULimitedHost
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
+from mininet.util import custom
+from mininet.link import TCIntf
+from mininet.topolib import TreeTopo
 
 """
 This work is a demonstration of bridging network namespace in mininet and docker containers
@@ -138,7 +141,7 @@ class bighost():
 
     def simpleRun(self, image):
         namestr = image.split('/')[-1]
-        call(['docker', 'run', '-itd', '--network=netns-' + self.name , '--name='+self.name+'-'+namestr, image], stdout=open(os.devnull, "w"), stderr=STDOUT)
+        call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.name, '--network=netns-' + self.name , '--name='+self.name+'-'+namestr, image], stdout=open(os.devnull, "w"), stderr=STDOUT)
         self.container_list.append(self.name+'-'+namestr)
 
 
@@ -196,23 +199,37 @@ Architecture:
     
     """
     )
-    net = Mininet( controller=Controller )
-
-    net.addController( 'c0' )
-
-    h1 = net.addHost('h1', ip='10.0.0.1')
-    h2 = net.addHost('h2', ip='10.0.0.2')
     
-    s1 = net.addSwitch('s1')
-    net.addLink(h1, s1)
-    net.addLink(h2, s1)
+    topo = TreeTopo( depth=1, fanout=2 )
+    
+    host = custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.1)
+    net = Mininet( topo=topo, host=host, controller=Controller )
+    hosts = [ net.getNodeByName( h  ) for h in topo.hosts() ]
+    
+    
+    print("*** Create Simple Topology ***")
+    
+    for h in hosts:
+        print("*** " + h.name + " ***")
+        dest_gw = h.IP(h.name+'-eth0')
+        print("*** " + "IP Address : " + dest_gw + " ***")
+        
+#    h1 = net.addHost('h1', ip='10.0.0.1')
+#    h2 = net.addHost('h2', ip='10.0.0.2')
+   
+#    s1 = net.addSwitch('s1')
+#    net.addLink(h1, s1)
+#    net.addLink(h2, s1)
+    
     net.start()
     
     # print(h1.pid)
     # print(h2.pid)
 
     client = setClient()
-
+    
+    h1 = hosts[0]
+    h2 = hosts[1]
     host1 = bighost(h1, 'h1', '192.168.52.0/24', client)
     host1.net()
     
@@ -220,7 +237,7 @@ Architecture:
     host2.net()
 
     host1.simpleRun('tz70s/node-server')
-    host2.simpleRun('ubuntu')
+    host2.simpleRun('tz70s/busy-wait')
     routeAll(host1, host2)
     
     CLI(net)
