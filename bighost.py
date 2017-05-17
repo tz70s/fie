@@ -57,7 +57,7 @@ class bighost():
     
     """
     def pairNetns(self):
-        print(self.name + ' : add netns veth pair with docker bridge')
+        # print(self.name + ' : add netns veth pair with docker bridge')
         
         create_link = 'ip link add ' + self.name + '-eth1' + ' type veth peer name docker-' + self.name + '-port'
         up_link = 'ip link set dev ' + self.name + '-eth1' + ' up'
@@ -208,9 +208,8 @@ Architecture:
     print("*** Create Simple Topology ***")
     
     for h in hosts:
-        print("*** " + h.name + " ***")
         dest_gw = h.IP(h.name+'-eth0')
-        print("*** " + "IP Address : " + dest_gw + " ***")
+        print("*** " + h.name + " - IP Address : " + dest_gw + " ***")
         
 #    h1 = net.addHost('h1', ip='10.0.0.1')
 #    h2 = net.addHost('h2', ip='10.0.0.2')
@@ -236,13 +235,14 @@ Architecture:
         substr = str(sub)
         bighosts[h.name] = bighost(h, h.name, '192.168.' + substr + '.0/24', client)
         bighosts[h.name].net()
-
+    
     bighosts['h1'].simpleRun('tz70s/node-server')
     bighosts['h1'].simpleRun('tz70s/busy-wait')
     bighosts['h2'].simpleRun('tz70s/busy-wait')
     bighosts['h3'].simpleRun('tz70s/node-server')
     bighosts['h4'].simpleRun('tz70s/busy-wait')
     
+    call(["docker", "ps"])
     routeAll(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     
     CLI(net)
