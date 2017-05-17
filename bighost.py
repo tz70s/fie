@@ -12,6 +12,7 @@ from mininet.log import setLogLevel, info
 from mininet.util import custom
 from mininet.link import TCIntf
 from mininet.topolib import TreeTopo
+from examples.consoles import ConsoleApp
 
 """
 This work is a demonstration of bridging network namespace in mininet and docker containers
@@ -136,14 +137,12 @@ class bighost():
         dest_ip = host.ip_pool.split('/')[0]
         dest_gw = host.host.IP(host.name+'-eth0')
         self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' + dest_gw + ' dev ' + self.name + '-eth0')
-            
-        print(dest_ip)
+        # print(dest_ip)
 
     def simpleRun(self, image):
         namestr = image.split('/')[-1]
-        call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.name, '--network=netns-' + self.name , '--name='+self.name+'-'+namestr, image], stdout=open(os.devnull, "w"), stderr=STDOUT)
-        self.container_list.append(self.name+'-'+namestr)
-
+        call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.name, '--network=netns-' + self.name , '--name='+self.name+'-'+str(len(self.container_list)), image], stdout=open(os.devnull, "w"), stderr=STDOUT)
+        self.container_list.append(self.name+'-'+str(len(self.container_list)))
 
 def setClient():
     client = docker.DockerClient(base_url = 'unix://var/run/docker.sock', version = 'auto')
@@ -170,7 +169,6 @@ Testing for cross-hosts:
     $h1 ping 192.168.53.2
 
 """
-
 
 """
 Set static route for each host to all container subnets
@@ -200,10 +198,10 @@ Architecture:
     """
     )
     
-    topo = TreeTopo( depth=1, fanout=2 )
-    
-    host = custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.1)
-    net = Mininet( topo=topo, host=host, controller=Controller )
+    topo = TreeTopo( depth=1, fanout=4 )
+    intf = custom(TCIntf, bw=3)
+    host = custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025)
+    net = Mininet( topo=topo, host=host, controller=Controller, intf=intf )
     hosts = [ net.getNodeByName( h  ) for h in topo.hosts() ]
     
     
@@ -228,25 +226,35 @@ Architecture:
 
     client = setClient()
     
-    h1 = hosts[0]
-    h2 = hosts[1]
-    host1 = bighost(h1, 'h1', '192.168.52.0/24', client)
-    host1.net()
+    # Set hosts
     
-    host2 = bighost(h2, 'h2', '192.168.53.0/24', client)
-    host2.net()
+    bighosts = {}
+    
+    sub = 10
+    for h in hosts:
+        sub += 1
+        substr = str(sub)
+        bighosts[h.name] = bighost(h, h.name, '192.168.' + substr + '.0/24', client)
+        bighosts[h.name].net()
 
-    host1.simpleRun('tz70s/node-server')
-    host2.simpleRun('tz70s/busy-wait')
-    routeAll(host1, host2)
+    bighosts['h1'].simpleRun('tz70s/node-server')
+    bighosts['h1'].simpleRun('tz70s/busy-wait')
+    bighosts['h2'].simpleRun('tz70s/busy-wait')
+    bighosts['h3'].simpleRun('tz70s/node-server')
+    bighosts['h4'].simpleRun('tz70s/busy-wait')
+    
+    routeAll(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     
     CLI(net)
-    
+    # app = ConsoleApp( net, width=4 )
+    # app.mainloop()
     net.stop()
 
     # destroy containers and bridges
-    host1.destroy()
-    host2.destroy()
+    bighosts['h1'].destroy()
+    bighosts['h2'].destroy()
+    bighosts['h3'].destroy()
+    bighosts['h4'].destroy()
 
 if __name__ == '__main__':
     emptyNet()
