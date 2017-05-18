@@ -5,7 +5,13 @@ An prototyping extension of mininet-based network emulation for integrating dock
 * python verison
 
 ```BASH
+# Problems of mininet support python3
 2.7.12
+
+# Dependencies
+Pip install docker
+Pip install pyutil
+
 ```
 
 * mininet version

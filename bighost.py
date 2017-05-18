@@ -282,7 +282,7 @@ Architecture:
     call(["docker", "ps"])
     routeAll(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     
-    # os.system("gnome-terminal -e 'top'")
+    os.system("gnome-terminal -e 'top'")
     # p= Popen('gnome-terminal', stdin=PIPE, stdout=PIPE, stderr=PIPE)
     # p.communicate(b"'hello world' stdin")
     logHost(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
