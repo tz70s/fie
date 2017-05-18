@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 from subprocess import call
-from subprocess import STDOUT
+from subprocess import STDOUT, Popen, PIPE
 import os
 import docker
+import json
 
 from mininet.net import Mininet
 from mininet.node import Controller, CPULimitedHost
@@ -13,6 +14,8 @@ from mininet.util import custom
 from mininet.link import TCIntf
 from mininet.topolib import TreeTopo
 from examples.consoles import ConsoleApp
+
+import psutil
 
 """
 This work is a demonstration of bridging network namespace in mininet and docker containers
@@ -43,7 +46,8 @@ class bighost():
         sub_list[-1] = '1'
         self.gw = '.'.join(sub_list)
     
-        self.container_list = []
+        self.container_list = [host.name]
+        self.pid_list = [host.pid]
 
     """
     Inheritent mininet host cmd
@@ -138,11 +142,26 @@ class bighost():
         dest_gw = host.host.IP(host.name+'-eth0')
         self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' + dest_gw + ' dev ' + self.name + '-eth0')
         # print(dest_ip)
-
+    
+    """
+    Native shell operations
+    TODO: Docker API Rewrite
+    """
     def simpleRun(self, image):
         namestr = image.split('/')[-1]
         call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.name, '--network=netns-' + self.name , '--name='+self.name+'-'+str(len(self.container_list)), image], stdout=open(os.devnull, "w"), stderr=STDOUT)
+        
+        self.pid_list.append(self.log_pid(self.name + '-' + str(len(self.container_list))))
         self.container_list.append(self.name+'-'+str(len(self.container_list)))
+    
+    """
+    Grep the pid to log CPU/MEM/Disk utilizations
+    """
+    def log_pid(self, containerName):
+        p = Popen(['sudo', 'docker', 'inspect', containerName], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        output, err = p.communicate((""))
+        inspect = json.loads(output)
+        return int(inspect[0]["State"]["Pid"])
 
 def setClient():
     client = docker.DockerClient(base_url = 'unix://var/run/docker.sock', version = 'auto')
@@ -181,7 +200,25 @@ def routeAll(*args):
                 continue
             else:
                 host.route(another)
-            
+"""
+Using psutil to log namespace/containers utilization via PID
+Current: Only CPU Percentages
+
+"""
+def logHost(*args):
+
+    for host in args:
+        print '\n'
+        i = 0
+        print('*** ' + host.name + ' utilization associate with docker containers ***')
+        for pid in host.pid_list:
+            p = psutil.Process(pid)
+            with p.oneshot():
+                print('Host/Container Names : ' + str(host.container_list[i]))
+                print('     CPU Percentages : '+ str(p.cpu_percent()))
+                i += 1
+        print('\n')
+
 def emptyNet():
     
     print("""
@@ -245,6 +282,10 @@ Architecture:
     call(["docker", "ps"])
     routeAll(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     
+    # os.system("gnome-terminal -e 'top'")
+    # p= Popen('gnome-terminal', stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    # p.communicate(b"'hello world' stdin")
+    logHost(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     CLI(net)
     # app = ConsoleApp( net, width=4 )
     # app.mainloop()
