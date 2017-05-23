@@ -1,6 +1,6 @@
-# SONET
+## Docker mn 
 
-An prototyping extension of mininet-based network emulation for integrating docker and ns-3
+A prototyping extension of mininet-based network emulation for integrating docker
 
 * python verison
 
