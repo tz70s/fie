@@ -14,6 +14,7 @@ from mininet.util import custom
 from mininet.link import TCIntf
 from mininet.topolib import TreeTopo
 from examples.consoles import ConsoleApp
+from mininet.topo import Topo
 
 import psutil
 
@@ -63,7 +64,7 @@ class bighost():
     def pairNetns(self):
         # print(self.name + ' : add netns veth pair with docker bridge')
         
-        create_link = 'ip link add ' + self.name + '-eth1' + ' type veth peer name docker-' + self.name + '-port'
+        create_link = 'ip link add ' + self.name + '-eth1' + ' type veth peer name ' + self.name + '-dport'
         up_link = 'ip link set dev ' + self.name + '-eth1' + ' up'
         set_ns = 'ip link set netns ' + self.pid + ' dev ' + self.name + '-eth1'
 
@@ -101,8 +102,8 @@ class bighost():
     """
     
     def patchBridge(self):
-        call(['brctl', 'addif', 'netns-'+self.name, 'docker-'+self.name+'-port'])
-        call(['ip', 'link', 'set', 'dev', 'docker-'+self.name+'-port', 'up'])
+        call(['brctl', 'addif', 'netns-'+self.name, self.name+'-dport'])
+        call(['ip', 'link', 'set', 'dev', self.name+'-dport', 'up'])
     
     """
     Remove devices
@@ -219,6 +220,33 @@ def logHost(*args):
                 i += 1
         print('\n')
 
+class NetworkTopo( Topo ):
+
+    " define network topo "
+
+    def build( self, **_opts ):
+
+        s1, s2, s3 = [ self.addSwitch( s ) for s in 's1', 's2', 's3' ]
+        
+        DriverFogIntf = custom(TCIntf, bw=5)
+        FogCloudIntf = custom(TCIntf, bw=15)
+        CloudIntf = custom(TCIntf, bw=50)
+
+        """
+        Node capabilities settings
+        """
+        
+        cloud = self.addHost('cloud', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
+        fog = self.addHost('fog', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
+        driver = self.addHost('driver', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
+
+        self.addLink( s1, cloud, intf=CloudIntf )
+        self.addLink( s1, s2, intf=FogCloudIntf )
+        self.addLink( s1, s3, intf=FogCloudIntf )
+        self.addLink( s2, fog, intf=FogCloudIntf )
+        self.addLink( s3, driver, intf=DriverFogIntf )
+        
+
 def emptyNet():
     
     print("""
@@ -235,12 +263,11 @@ Architecture:
     """
     )
     
-    topo = TreeTopo( depth=1, fanout=4 )
-    intf = custom(TCIntf, bw=3)
-    host = custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025)
-    net = Mininet( topo=topo, host=host, controller=Controller, intf=intf )
-    hosts = [ net.getNodeByName( h  ) for h in topo.hosts() ]
+    " topo = TreeTopo( depth=1, fanout=4 )"
     
+    topo = NetworkTopo()
+    net = Mininet( topo=topo )
+    hosts = [ net.getNodeByName( h  ) for h in topo.hosts() ]
     
     print("*** Create Simple Topology ***")
     
@@ -266,6 +293,7 @@ Architecture:
     
     bighosts = {}
     
+    # Set CIDR
     sub = 10
     for h in hosts:
         sub += 1
@@ -273,29 +301,29 @@ Architecture:
         bighosts[h.name] = bighost(h, h.name, '192.168.' + substr + '.0/24', client)
         bighosts[h.name].net()
     
-    bighosts['h1'].simpleRun('tz70s/node-server')
-    bighosts['h1'].simpleRun('tz70s/busy-wait')
-    bighosts['h2'].simpleRun('tz70s/busy-wait')
-    bighosts['h3'].simpleRun('tz70s/node-server')
-    bighosts['h4'].simpleRun('tz70s/busy-wait')
+    bighosts['cloud'].simpleRun('tz70s/node-server')
+    bighosts['fog'].simpleRun('tz70s/busy-wait')
+    bighosts['driver'].simpleRun('tz70s/busy-wait')
+    # bighosts['h3'].simpleRun('tz70s/node-server')
+    # bighosts['h4'].simpleRun('tz70s/busy-wait')
     
     call(["docker", "ps"])
-    routeAll(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
+    routeAll(bighosts['cloud'], bighosts['fog'], bighosts['driver'])
     
-    os.system("gnome-terminal -e 'top'")
+    # os.system("gnome-terminal -e 'top'")
     # p= Popen('gnome-terminal', stdin=PIPE, stdout=PIPE, stderr=PIPE)
     # p.communicate(b"'hello world' stdin")
-    logHost(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
+    # logHost(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
     CLI(net)
     # app = ConsoleApp( net, width=4 )
     # app.mainloop()
     net.stop()
 
     # destroy containers and bridges
-    bighosts['h1'].destroy()
-    bighosts['h2'].destroy()
-    bighosts['h3'].destroy()
-    bighosts['h4'].destroy()
+    bighosts['cloud'].destroy()
+    bighosts['fog'].destroy()
+    bighosts['driver'].destroy()
+    # bighosts['h4'].destroy()
 
 if __name__ == '__main__':
     emptyNet()
