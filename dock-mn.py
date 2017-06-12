@@ -11,10 +11,12 @@ from mininet.node import Controller, CPULimitedHost
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.util import custom
-from mininet.link import TCIntf
+from mininet.link import TCIntf, Intf
 from mininet.topolib import TreeTopo
 from examples.consoles import ConsoleApp
 from mininet.topo import Topo
+from mininet.util import quietRun
+
 
 import psutil
 
@@ -218,6 +220,19 @@ def logHost(*args):
                 i += 1
         print('\n')
 
+
+def checkIntf( intf ):
+    "Make sure intf exists and is not configured."
+    config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
+    if not config:
+        error( 'Error:', intf, 'does not exist!\n' )
+        exit( 1 )
+    ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
+    if ips:
+        error( 'Error:', intf, 'has an IP address,'
+               'and is probably in use!\n' )
+        exit( 1 )
+
 """
 Custom network topology
 
@@ -244,6 +259,13 @@ class NetworkTopo( Topo ):
         FogCloudIntf = custom(TCIntf, bw=15)
         CloudIntf = custom(TCIntf, bw=50)
 
+        # Hardware interface
+        
+        # IntfName = "enp4s30xxxx"
+        # checkIntf(IntfName)
+        # patch hardware interface to switch s3
+        # hardwareIntf = Intf( IntfName, node=s3 )
+
         """
         Node capabilities settings
         """
@@ -257,7 +279,10 @@ class NetworkTopo( Topo ):
         self.addLink( s1, s3, intf=FogCloudIntf )
         self.addLink( s2, fog, intf=FogCloudIntf )
         self.addLink( s3, driver, intf=DriverFogIntf )
-        
+
+# Hardware interface
+ 
+
 
 def emptyNet():
     
