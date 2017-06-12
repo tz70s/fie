@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -x
+
 # check mn file
 if [ -e "/home/$(whoami)/dockermn" ]; then
 	echo " directory existed"
