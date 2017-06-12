@@ -17,9 +17,9 @@ sudo apt-add-repository 'deb https://apt.dockerproject.org/repo ubuntu-xenial ma
 sudo apt-get update
 apt-cache policy docker-engine
 sudo apt-get install -y python docker-engine uuid-dev git python-pip bridge-utils
-sudo usermod -a -G docker ubuntu # Add ubuntu user to the docker group
+sudo usermod -a -G docker $(whoami) # Add user to the docker group
 	
-cd /home/ubuntu/dockermn
+cd /home/$(whoami)/dockermn
 	
 # clone mininet
 
@@ -31,5 +31,5 @@ sudo util/install.sh -a
 	
 pip install docker psutil
 
-cd /home/ubuntu/dockermn
+cd /home/$(whoami)/dockermn
 cp dock-mn.py mininet/
