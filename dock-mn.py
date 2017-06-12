@@ -31,11 +31,9 @@ Architecture:
 """
 
 class bighost():
-        
-    """
-    Initialize host/namespace informations
+            
+    # Initialize host/namespace informations
 
-    """
     def __init__(self, host, name, ip_pool, docker_client):
         self.host = host
         self.pid = str(host.pid)
@@ -50,10 +48,8 @@ class bighost():
         self.container_list = [host.name]
         self.pid_list = [host.pid]
 
-    """
-    Inheritent mininet host cmd
-    
-    """
+    # Inheritent mininet host cmd
+
     def cmd(self, cmdstr):
         self.host.cmd(cmdstr)
 
@@ -142,7 +138,6 @@ class bighost():
         dest_ip = host.ip_pool.split('/')[0]
         dest_gw = host.host.IP(host.name+'-eth0')
         self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' + dest_gw + ' dev ' + self.name + '-eth0')
-        # print(dest_ip)
     
     """
     Native shell operations
@@ -163,6 +158,9 @@ class bighost():
         output, err = p.communicate((""))
         inspect = json.loads(output)
         return int(inspect[0]["State"]["Pid"])
+
+
+# Set docker client
 
 def setClient():
     client = docker.DockerClient(base_url = 'unix://var/run/docker.sock', version = 'auto')
@@ -220,14 +218,28 @@ def logHost(*args):
                 i += 1
         print('\n')
 
+"""
+Custom network topology
+
+Usage
+
+1. Add switches
+2. Custom interface, the interfaces from peers are symmetric here
+3. Custom hosts
+4. Link switches and hosts
+
+"""
+
 class NetworkTopo( Topo ):
 
     " define network topo "
 
     def build( self, **_opts ):
 
+        # Add switches
         s1, s2, s3 = [ self.addSwitch( s ) for s in 's1', 's2', 's3' ]
         
+        # Custom interface 
         DriverFogIntf = custom(TCIntf, bw=5)
         FogCloudIntf = custom(TCIntf, bw=15)
         CloudIntf = custom(TCIntf, bw=50)
@@ -263,7 +275,8 @@ Architecture:
     """
     )
     
-    " topo = TreeTopo( depth=1, fanout=4 )"
+    
+    # Set mininet settings
     
     topo = NetworkTopo()
     net = Mininet( topo=topo )
@@ -274,18 +287,8 @@ Architecture:
     for h in hosts:
         dest_gw = h.IP(h.name+'-eth0')
         print("*** " + h.name + " - IP Address : " + dest_gw + " ***")
-        
-#    h1 = net.addHost('h1', ip='10.0.0.1')
-#    h2 = net.addHost('h2', ip='10.0.0.2')
-   
-#    s1 = net.addSwitch('s1')
-#    net.addLink(h1, s1)
-#    net.addLink(h2, s1)
     
     net.start()
-    
-    # print(h1.pid)
-    # print(h2.pid)
 
     client = setClient()
     
@@ -301,6 +304,8 @@ Architecture:
         bighosts[h.name] = bighost(h, h.name, '192.168.' + substr + '.0/24', client)
         bighosts[h.name].net()
     
+
+
     bighosts['cloud'].simpleRun('tz70s/node-server')
     bighosts['fog'].simpleRun('tz70s/busy-wait')
     bighosts['driver'].simpleRun('tz70s/busy-wait')
@@ -314,16 +319,15 @@ Architecture:
     # p= Popen('gnome-terminal', stdin=PIPE, stdout=PIPE, stderr=PIPE)
     # p.communicate(b"'hello world' stdin")
     # logHost(bighosts['h1'], bighosts['h2'], bighosts['h3'], bighosts['h4'])
+
     CLI(net)
-    # app = ConsoleApp( net, width=4 )
-    # app.mainloop()
+
     net.stop()
 
     # destroy containers and bridges
     bighosts['cloud'].destroy()
     bighosts['fog'].destroy()
     bighosts['driver'].destroy()
-    # bighosts['h4'].destroy()
 
 if __name__ == '__main__':
     emptyNet()
