@@ -21,11 +21,11 @@ $script = <<SCRIPT
 	cd /home/ubuntu/dockermn
 	
 	# clone mininet
-	# git clone git://github.com/mininet/mininet.git
+	git clone git://github.com/mininet/mininet.git
 
 	# install mininet
-	# cd mininet
-	# sudo util/install.sh -a
+	cd mininet
+	sudo util/install.sh -a
 	
 	pip install docker psutil
 
