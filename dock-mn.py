@@ -281,10 +281,8 @@ class NetworkTopo( Topo ):
         self.addLink( s3, driver, intf=DriverFogIntf )
 
 # Hardware interface
- 
 
-
-def emptyNet():
+def emulate():
     
     print("""
 
@@ -299,7 +297,6 @@ Architecture:
     
     """
     )
-    
     
     # Set mininet settings
     
@@ -355,4 +352,4 @@ Architecture:
     bighosts['driver'].destroy()
 
 if __name__ == '__main__':
-    emptyNet()
+    emulate()
