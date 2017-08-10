@@ -2,6 +2,7 @@
 
 A prototyping extension of mininet-based network emulation for integrating multi-containers-as-a-single-host concept.
 
+[![Build Status](https://travis-ci.org/tz70s/fie.svg?branch=master)](https://travis-ci.org/tz70s/fie)
 ## Objective
 
 1. To support multiple Docker containers “running” in a single host with no interference with the normal usage.
