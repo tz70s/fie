@@ -44,7 +44,7 @@ Usage
 
 """
 
-class NetworkTopo( AbsTopo ):
+class NetworkTopo( Topo ):
 
     " define network topo "
 
