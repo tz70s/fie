@@ -15,7 +15,6 @@ import docker
 import os
 
 from subprocess import call
-from subprocess import STDOUT, Popen, PIPE
 
 from mininet.util import custom
 from mininet.node import CPULimitedHost

@@ -1,2 +1,16 @@
 language: python
-install: ./start.sh
+sudo: required
+
+matrix:
+  include:
+    - dist: xenial
+      env: dist="16.04 LTS xenial"
+
+before_install:
+- sudo apt-get update -qq
+
+install:
+- sudo scripts/install.sh
+
+script:
+- sudo mn --test pingall

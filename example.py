@@ -1,29 +1,19 @@
 #!/usr/bin/python
 
-from subprocess import call
-from subprocess import STDOUT, Popen, PIPE
-import os
-import docker
-import json
-
-from mininet.net import Mininet
-from mininet.node import Controller, CPULimitedHost
+from mininet.node import CPULimitedHost
 from mininet.cli import CLI
-from mininet.log import setLogLevel, info
 from mininet.util import custom
 from mininet.link import TCIntf, Intf
-from mininet.topolib import TreeTopo
 from mininet.topo import Topo
 from mininet.util import quietRun
 from fie.absnode import AbstractionNode
 from fie.topo import AbsTopo
 from fie.env import Env
 from fie.fie import FIE
-
+import fie.utils
 
 
 """
-
 Simple emptyNet for h1, h2, s1, c0 architecture
 
 h1 runs on 10.0.0.1 along with 192.168.52.0/24 subnet and a node-server app
@@ -44,23 +34,10 @@ Testing for cross-hosts:
 
 """
 
-def checkIntf( intf ):
-    "Make sure intf exists and is not configured."
-    config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
-    if not config:
-        error( 'Error:', intf, 'does not exist!\n' )
-        exit( 1 )
-    ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
-    if ips:
-        error( 'Error:', intf, 'has an IP address,'
-               'and is probably in use!\n' )
-        exit( 1 )
-
 """
 Custom network topology
 
 Usage
-
 1. Add switches
 2. Custom interface, the interfaces from peers are symmetric here
 3. Custom hosts

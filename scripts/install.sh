@@ -2,13 +2,6 @@
 
 set -x
 
-# check mn file
-if [ -e "/home/$(whoami)/dockermn" ]; then
-	echo " directory existed"
-else
-	mkdir -p "/home/$(whoami)/dockermn"
-fi
-	
 # Install Docker
 	
 sudo apt-get update
@@ -19,17 +12,16 @@ apt-cache policy docker-engine
 sudo apt-get install -y python docker-engine uuid-dev git python-pip bridge-utils
 sudo usermod -a -G docker $(whoami) # Add user to the docker group
 	
-cd /home/$(whoami)/dockermn
-	
 # clone mininet
 
+cd $(HOME)
 git clone git://github.com/mininet/mininet.git
 
 # install mininet
 cd mininet
 sudo util/install.sh -a
-	
-pip install docker psutil
 
-cd /home/$(whoami)/dockermn
-cp dock-mn.py mininet/
+pip install docker
+
+export PYTHONPATH="$PYTHONPATH:$(HOME)/mininet/mininet"
+export PYTHONPATH="$PYTHONPATH:$(HOME)/fie"
