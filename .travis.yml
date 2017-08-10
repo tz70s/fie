@@ -14,4 +14,4 @@ install:
 
 script:
 - sudo mn --test pingall
-- sduo python example.py
+- sudo python example.py
