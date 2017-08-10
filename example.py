@@ -7,7 +7,6 @@ from mininet.link import TCIntf, Intf
 from mininet.topo import Topo
 from mininet.util import quietRun
 from fie.absnode import AbstractionNode
-from fie.topo import AbsTopo
 from fie.env import Env
 from fie.fie import FIE
 import fie.utils
