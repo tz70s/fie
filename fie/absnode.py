@@ -23,11 +23,12 @@ class AbstractionNode():
             
     # Initialize host/namespace informations
 
-    def __init__(self, host, ip_pool, docker_client):
+    def __init__(self, host, ip_pool, docker_client, **opts):
         
-        self.head_node = self.createMininetHost()
-        self.pid = str(self.head_node.pid)
-        self.name = head_node.name
+        self.head_node_cls = self.config_head_node(**opts)
+        self.head_node = None
+        self.pid = None
+        self.name = name
         self.ip_pool = ip_pool
         self.gw = self.create_gateway()
         self.cg = self.name
@@ -47,12 +48,16 @@ class AbstractionNode():
 
     # Create a mininet host as an abstraction node's head node
     # TODO: USE resource limited host instead of CPULimitedHost
-    def createMininetHost(self, name, sched, period_us, cpu):
+    def config_head_node(self, sched='cfs', period_us=50000, cpu=0.025):
+        """
+        The customized class constructor.
+        We'll add this while defining TOPO, i.e. h = self.addhost(name, cls=abs.head_node_cls)
+        """
         return custom(CPULimitedHost, sched=sched, period_us=period_us, cpu=cpu)
-        
+    
     # Inheritent mininet host cmd
     def cmd(self, cmdstr):
-        self.host.cmd(cmdstr)
+        self.head_node.cmd(cmdstr)
 
     # Create the gateway of abstraction node route
     def create_gateway(self):
