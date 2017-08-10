@@ -138,7 +138,7 @@ class AbstractionNode():
     # Destroy specific container
     def destroy(self, container):
         for c in self.container_list_true:
-            if c.name = container:
+            if c.name == container:
                 c.destroy()
                 return "Successful destory container : " + c.name
         return "The target container to destroy doesn't exist!"

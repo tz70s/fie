@@ -15,14 +15,12 @@ import json
 """
 TODO: Use Docker python API instead of shell command for more options.
 """
-def init_docker_client():
-    client = docker.DockerClient(base_url = 'unix://var/run/docker.sock', version = 'auto')
-    return client
 
 # TODO: Modify the "name" due to ambiguity
 class Container():
-    def __init__(self, client, image, cg_parent, network, name_parent, count):
-        self.client = client
+    """The declaration of container, important method, run, log_pid, destroy"""
+    def __init__(self, docker_client, image, cg_parent, network, name_parent, count):
+        self.docker_client = docker_client
         self.image = image
         self.cg_parent = cg_parent
         self.network = network
@@ -32,15 +30,15 @@ class Container():
     
     # Run an container
     def run(self):
-        namestr = image.split('/')[-1]
+        namestr = self.image.split('/')[-1]
 
         call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.cg_parent, \
             '--network=' + self.network , \
-            '--name=' + self.name, image], \
+            '--name=' + self.name, self.image], \
             stdout=open(os.devnull, "w"), stderr=STDOUT)
         
         # CHECK THIS: if the pid appears soon after the container created?
-        self.pid = self.log_pid(self.name)
+        self.pid = self.log_pid()
     
     # Logs pid of container, return a string
     def log_pid(self):

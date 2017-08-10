@@ -103,3 +103,6 @@ ENV/
 # vagrant
 .vagrant
 *console.log
+
+# vscode
+.vscode
