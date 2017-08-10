@@ -14,7 +14,7 @@ sudo usermod -a -G docker $(whoami) # Add user to the docker group
 	
 # clone mininet
 
-cd $(HOME)
+cd $HOME
 git clone git://github.com/mininet/mininet.git
 
 # install mininet
@@ -23,5 +23,5 @@ sudo util/install.sh -a
 
 pip install docker
 
-export PYTHONPATH="$PYTHONPATH:$(HOME)/mininet/mininet"
-export PYTHONPATH="$PYTHONPATH:$(HOME)/fie"
+export PYTHONPATH="$PYTHONPATH:$HOME/mininet/mininet"
+export PYTHONPATH="$PYTHONPATH:$HOME/fie"
