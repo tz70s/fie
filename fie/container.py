@@ -28,8 +28,8 @@ class Container():
         self.name = name_parent + '-' + str(count)
         self.pid = "none"
     
-    # Run an container
     def run(self):
+        """Run an container"""
         namestr = self.image.split('/')[-1]
 
         call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.cg_parent, \
@@ -40,13 +40,13 @@ class Container():
         # CHECK THIS: if the pid appears soon after the container created?
         self.pid = self.log_pid()
     
-    # Logs pid of container, return a string
     def log_pid(self):
+        """Logs pid of container, return a string"""
         p = Popen(['sudo', 'docker', 'inspect', self.name], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         output, err = p.communicate((""))
         inspect = json.loads(output)
         return int(inspect[0]["State"]["Pid"])
     
-    # Destroy the running container
     def destroy(self):
+        """Destroy the running container"""
         call(['docker', 'rm', '-f', self.name], stdout=open(os.devnull, "w"), stderr=STDOUT)

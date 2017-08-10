@@ -23,7 +23,7 @@ class Env(object):
 
     def set_cidr(self, node_num):
         """Set CIDR for private ip pool assignment, return a list of cidrs"""
-        # TODO: support this
+        # TODO: support this, extend to ip_addr class C
         if node_num > 200:
             print("We don't support nodes exceed 200 currently")
             exit(1)
