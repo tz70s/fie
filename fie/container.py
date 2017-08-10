@@ -17,7 +17,7 @@ TODO: Use Docker python API instead of shell command for more options.
 """
 
 # TODO: Modify the "name" due to ambiguity
-class Container():
+class Container(object):
     """The declaration of container, important method, run, log_pid, destroy"""
     def __init__(self, docker_client, image, cg_parent, network, name_parent, count):
         self.docker_client = docker_client
@@ -26,7 +26,7 @@ class Container():
         self.network = network
         # count represented as the numbers of abstraction node containers list, used for dealing with naming conflicts. 
         self.name = name_parent + '-' + str(count)
-        self.pid = "none"
+        self.pid = None
     
     def run(self):
         """Run an container"""
@@ -38,7 +38,7 @@ class Container():
             stdout=open(os.devnull, "w"), stderr=STDOUT)
         
         # CHECK THIS: if the pid appears soon after the container created?
-        self.pid = self.log_pid()
+        # self.pid = self.log_pid()
     
     def log_pid(self):
         """Logs pid of container, return a string"""

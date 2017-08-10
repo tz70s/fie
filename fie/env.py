@@ -7,7 +7,6 @@ Checkout the License for using, modifying and publishing.
 """
 
 import docker
-import fie
 
 class Env(object):
     """The declaration of some share variables."""
@@ -43,12 +42,3 @@ class Env(object):
                 self.used_list[i] = True
                 return self.cidr_list[i]
         return ""
-
-    def routeAll(self, *args):
-        """(Add static) Route all the hosts"""
-        for host in args:
-            for another in args:
-                if host == another:
-                    continue
-                else:
-                    host.route(another)

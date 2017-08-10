@@ -24,7 +24,6 @@ A prototyping extension of mininet-based network emulation for integrating multi
 
 # Dependencies
 Pip install docker
-Pip install pyutil
 
 ```
 
@@ -38,64 +37,13 @@ Pip install pyutil
 
 ```BASH
 # Install dep
-sudo ./start.sh
+sudo ./scripts/start.sh
 
-# move to mininet module path or create links
-# run in root
+# Add dependencies
+export PYTHONPATH = "$PYTHONPATH:/path/to/mininet"
+export PYTHONPATH = "$PYTHONPATH:/path/to/fie"
 
-sudo ./mininet/mininet/dock-mn.py
-```
-
-## Configuration
-
-```python
-class NetworkTopo( Topo ):
-
-    " define network topo "
-
-    def build( self, **_opts ):
-
-        # Add switches
-        s1, s2, s3 = [ self.addSwitch( s ) for s in 's1', 's2', 's3' ]
-        
-        # Custom interface 
-        DriverFogIntf = custom(TCIntf, bw=5)
-        FogCloudIntf = custom(TCIntf, bw=15)
-        CloudIntf = custom(TCIntf, bw=50)
-
-        """
-        Node capabilities settings
-        """
-        
-        # custom hosts, adjust cpu utilization in cpu metrics
-        cloud = self.addHost('cloud', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        fog = self.addHost('fog', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        driver = self.addHost('driver', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-
-        # link hosts, switches, and interfaces
-        self.addLink( s1, cloud, intf=CloudIntf )
-        self.addLink( s1, s2, intf=FogCloudIntf )
-        self.addLink( s1, s3, intf=FogCloudIntf )
-        self.addLink( s2, fog, intf=FogCloudIntf )
-        self.addLink( s3, driver, intf=DriverFogIntf )
-```
-
-## Run docker images
-
-```python
-
-# ports need to write in docker file, no port-forward here
-
-bighosts['cloud'].simpleRun('tz70s/node-server')
-bighosts['fog'].simpleRun('tz70s/busy-wait')
-bighosts['driver'].simpleRun('tz70s/busy-wait')
-
-# remember to destroy
-
-# destroy containers and bridges
-bighosts['cloud'].destroy()
-bighosts['fog'].destroy()
-bighosts['driver'].destroy()
-
+# Run an example
+sudo ./example.py
 ```
 
