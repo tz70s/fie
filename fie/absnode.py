@@ -55,13 +55,7 @@ class AbstractionNode():
 
     # Create a mininet host as an abstraction node's head node
     # TODO: USE resource limited host instead of CPULimitedHost
-    # TODO: Probably remove this
-    def config_head_node(self, sched='cfs', period_us=50000, cpu=0.025):
-        """
-        The customized class constructor.
-        We'll add this while defining TOPO, i.e. h = self.addhost(name, cls=abs.head_node_cls)
-        """
-        return custom(CPULimitedHost, sched=sched, period_us=period_us, cpu=cpu)
+    
     
     # Inheritent mininet host cmd
     def cmd(self, cmdstr):

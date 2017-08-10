@@ -16,7 +16,6 @@ import json
 TODO: Use Docker python API instead of shell command for more options.
 """
 
-# TODO: Modify the "name" due to ambiguity
 class Container(object):
     """The declaration of container, important method, run, log_pid, destroy"""
     def __init__(self, docker_client, image, cg_parent, network, name_parent, count):
@@ -43,7 +42,7 @@ class Container(object):
     def log_pid(self):
         """Logs pid of container, return a string"""
         p = Popen(['sudo', 'docker', 'inspect', self.name], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, err = p.communicate((""))
+        output, _ = p.communicate((""))
         inspect = json.loads(output)
         return int(inspect[0]["State"]["Pid"])
     
