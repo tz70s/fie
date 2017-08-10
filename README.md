@@ -23,7 +23,7 @@ A prototyping extension of mininet-based network emulation for integrating multi
 2.7.12
 
 # Dependencies
-Pip install docker
+pip install docker
 
 ```
 
