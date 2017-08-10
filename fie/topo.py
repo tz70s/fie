@@ -20,9 +20,9 @@ class AbsTopo(Topo):
         """Inherit the topo defined from mininet"""
         Topo.__init__(self, *args, **params)
 
-    def add_abs_host( self, absnode ):
+    def add_abs_host( self, absnode, **opts):
         """Rewrite addHost into the abstraction node form"""
-        absnode.head_node = self.addHost(absnode.name, cls = absnode.head_node_cls)
+        absnode.head_node = self.addHost(absnode.name, cls = absnode.head_node_cls, **opts)
         absnode.pid = str(absnode.head_node.pid)
 
     def add_abs_link(self, node1, absnode, port1=None, port2=None, key=None, **opts):
