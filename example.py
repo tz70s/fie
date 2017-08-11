@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+"""
+This work targets for emulating fog computing infrastructure and fog service and network evaluation.
+Original author Tzu-Chiao Yeh (@tz70s), 2017@National Taiwan University, Dependable Distributed System and Network Lab.
+Checkout the License for using, modifying and publishing.
+"""
+
 from mininet.node import CPULimitedHost
 from mininet.cli import CLI
 from mininet.util import custom
@@ -100,19 +106,16 @@ Architecture:
     # Set mininet settings
     
     topo = NetworkTopo()
+    # The abstraction node automatically wrapped here.
     net = FIE( topo=topo )
     
     net.start()
     net.routeAll()
     
-    # Set hosts
-    
-    
     net.absnode_map['cloud'].run('tz70s/node-server')
     net.absnode_map['fog'].run('tz70s/node-server')
     net.absnode_map['driver'].run('tz70s/node-server')
     
-    # topo.routeAll()
     CLI(net)
 
     net.stop()

@@ -166,8 +166,7 @@ class AbstractionNode():
             c.destroy()
         self.dockerbridge.remove()
     
-    # Consider to remove this
-    # Set static route to a specific container subnet
+    # Set static route to a specific container subnet.
     def route(self, host):
         dest_ip = host.ip_pool.split('/')[0]
         dest_gw = host.head_node.IP(host.name+'-eth0')
