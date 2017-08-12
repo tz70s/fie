@@ -14,4 +14,3 @@ install:
 
 script:
 - sudo mn --test pingall
-- sudo python example.py

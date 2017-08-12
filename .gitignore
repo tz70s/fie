@@ -106,3 +106,10 @@ ENV/
 
 # vscode
 .vscode
+
+# mn
+mininet/
+oflops/
+oftest/
+openflow/
+pox/

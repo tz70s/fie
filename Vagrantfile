@@ -3,10 +3,10 @@
 
 $script = <<SCRIPT
 
-	if [ -e "/home/ubuntu/dockermn" ]; then
+	if [ -e "/home/ubuntu/fie" ]; then
 		echo " directory existed"
 	else
-		mkdir -p "/home/ubuntu/dockermn"
+		mkdir -p "/home/ubuntu/fie"
 	fi
 	
 	# Install Docker
@@ -18,7 +18,7 @@ $script = <<SCRIPT
 	sudo apt-get install -y python docker-engine uuid-dev git python-pip bridge-utils
 	sudo usermod -a -G docker ubuntu # Add ubuntu user to the docker group
 	
-	cd /home/ubuntu/dockermn
+	cd /home/ubuntu/fie
 	
 	# clone mininet
 	git clone git://github.com/mininet/mininet.git
@@ -29,7 +29,7 @@ $script = <<SCRIPT
 	
 	pip install docker psutil
 
-	cd /home/ubuntu/dockermn
+	cd /home/ubuntu/fie
 	cp dock-mn.py mininet/
 SCRIPT
 
@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
   
 	config.vm.box = "ubuntu/xenial64"
 	
- 	config.vm.synced_folder ".", "/home/ubuntu/dockermn"
+ 	config.vm.synced_folder ".", "/home/ubuntu/fie"
 
 	config.vm.provision "shell", inline: $script
 

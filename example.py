@@ -6,7 +6,7 @@ Original author Tzu-Chiao Yeh (@tz70s), 2017@National Taiwan University, Dependa
 Checkout the License for using, modifying and publishing.
 """
 
-from mininet.node import CPULimitedHost
+
 from mininet.cli import CLI
 from mininet.util import custom
 from mininet.link import TCIntf, Intf
@@ -15,6 +15,7 @@ from mininet.util import quietRun
 from fie.absnode import AbstractionNode
 from fie.env import Env
 from fie.fie import FIE
+from fie.rslimit import RsLimitedHost
 import fie.utils
 
 
@@ -75,9 +76,9 @@ class NetworkTopo( Topo ):
         """
         Node capabilities settings
         """
-        cloud = self.addHost('cloud', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        fog = self.addHost('fog', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        driver = self.addHost('driver', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
+        cloud = self.addHost('cloud', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
+        fog = self.addHost('fog', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
+        driver = self.addHost('driver', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
 
         self.addLink( s1, cloud, intf=CloudIntf )
         self.addLink( s1, s2, intf=FogCloudIntf )
