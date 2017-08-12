@@ -15,7 +15,7 @@ from mininet.util import quietRun
 from fie.absnode import AbstractionNode
 from fie.env import Env
 from fie.fie import FIE
-from fie.rslimit import RsLimitedHost
+from fie.rslimit import RSLimitedHost
 import fie.utils
 
 
@@ -77,9 +77,9 @@ class NetworkTopo( Topo ):
         Node capabilities settings
         """
 
-        cloud = self.addHost('cloud', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
-        fog = self.addHost('fog', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
-        driver = self.addHost('driver', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
+        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        driver = self.addHost('driver', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
 
         self.addLink( s1, cloud, intf=CloudIntf )
         self.addLink( s1, s2, intf=FogCloudIntf )

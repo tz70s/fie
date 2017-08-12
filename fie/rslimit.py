@@ -15,12 +15,12 @@ from mininet.util import ( quietRun, errFail )
 from mininet.log import error
 
 
-class RsLimitedHost(CPULimitedHost):
+class RSLimitedHost(CPULimitedHost):
     def __init__( self, name, sched='cfs', **kwargs ):
         Host.__init__( self, name, **kwargs )
         # Initialize class if necessary
-        if not RsLimitedHost.inited:
-            RsLimitedHost.init()
+        if not RSLimitedHost.inited:
+            RSLimitedHost.init()
         
         # TODO: Add DISK
         self.cgroup = 'cpu,cpuacct,cpuset,memory:/' + self.name

@@ -6,7 +6,7 @@ Original author Tzu-Chiao Yeh (@tz70s), 2017@National Taiwan University, Dependa
 Checkout the License for using, modifying and publishing.
 """
 
-from mininet.node import CPULimitedHost
+
 from mininet.cli import CLI
 from mininet.util import custom
 from mininet.link import TCIntf, Intf
@@ -15,19 +15,47 @@ from mininet.util import quietRun
 from fie.absnode import AbstractionNode
 from fie.env import Env
 from fie.fie import FIE
+from fie.rslimit import RSLimitedHost
 import fie.utils
 
 
 """
-Integration test. 
+Simple emptyNet for h1, h2, s1, c0 architecture
+
+h1 runs on 10.0.0.1 along with 192.168.52.0/24 subnet and a node-server app
+h2 runs on 10.0.0.2 along with 192.168.53.0/24 subnet and a ubuntu app
+
+Each host can ping each other and works with the docker application on itself:
+    $h1 curl -qa 192.168.52.2:8181    
+    $h2 ping 192.168.53.2
+
+Testing for cross-hosts:
+    # set static routes
+    $h1 route add -net 192.168.53.0 netmask 255.255.255.0 gw 10.0.0.2 dev h1-eth0
+    $h2 route add -net 192.168.52.0 netmask 255.255.255.0 gw 10.0.0.1 dev h2-eth0
+
+    # cross-hosts tests
+    $h2 curl -qa 192.168.52.2:8181    
+    $h1 ping 192.168.53.2
+
 """
-def assert_eq(left, right, err_msg):
-    if left != right:
-        print(err_msg)
-        exit(1)
+
+"""
+Custom network topology
+
+Usage
+1. Add switches
+2. Custom interface, the interfaces from peers are symmetric here
+3. Custom hosts
+4. Link switches and hosts
+
+"""
 
 class NetworkTopo( Topo ):
-    """define network topo"""
+
+    " define network topo "
+
+
     def build( self, **_opts ):
 
         # Add switches
@@ -38,10 +66,20 @@ class NetworkTopo( Topo ):
         FogCloudIntf = custom(TCIntf, bw=15)
         CloudIntf = custom(TCIntf, bw=50)
 
-        """Node capabilities settings"""
-        cloud = self.addHost('cloud', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        fog = self.addHost('fog', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
-        driver = self.addHost('driver', cls=custom(CPULimitedHost, sched='cfs', period_us=50000, cpu=0.025))
+        # Hardware interface
+        
+        # IntfName = "enp4s30xxxx"
+        # checkIntf(IntfName)
+        # patch hardware interface to switch s3
+        # hardwareIntf = Intf( IntfName, node=s3 )
+
+        """
+        Node capabilities settings
+        """
+
+        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        driver = self.addHost('driver', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
 
         self.addLink( s1, cloud, intf=CloudIntf )
         self.addLink( s1, s2, intf=FogCloudIntf )
@@ -49,22 +87,47 @@ class NetworkTopo( Topo ):
         self.addLink( s2, fog, intf=FogCloudIntf )
         self.addLink( s3, driver, intf=DriverFogIntf )
 
+# Hardware interface
+
 def emulate():
+    
+    print("""
+
+This work is a demonstration of bridging network namespace in mininet and docker containers
+    
+Architecture:
+    =======     ========
+    |     |     |Docker|---CONTAINER
+    |netns|=====|      |---CONTAINER
+    |     |     |Bridge|---CONTAINER
+    =======     ========
+    
+    """
+    )
     
     # Set mininet settings
     
     topo = NetworkTopo()
+    # The abstraction node automatically wrapped here.
     net = FIE( topo=topo )
     
-    # Test nodes exist
-
     net.start()
     net.routeAll()
     
-    net.absnode_map['cloud'].run('tz70s/node-server')
-    net.absnode_map['fog'].run('tz70s/node-server')
-    net.absnode_map['driver'].run('tz70s/node-server')
-    # Test containers ran up
+    """
+    TODO: For internal container configuration =>
+        We have **kwargs currently, so it's available of setting contaienr for more options.
+        Including cpu_period, cpu_quota (not like fraction, it is represented in ms), mem_limit, etc.
+        You can specifiy it => absnode_map['test'].run('image', cpu_quota=1000)
+        The problem is, should we automatically compute the relative portion of internal containers? Or, let them remained in the absolute number?
+    """
+    
+    net.absnode_map['cloud'].run('tz70s/busy-wait', cpu_quota=1000) # This will makes the quota of absnode cloud almost full
+    net.absnode_map['cloud'].run('tz70s/busy-wait')
+    net.absnode_map['fog'].run('tz70s/busy-wait')
+    net.absnode_map['driver'].run('tz70s/busy-wait')
+    
+    CLI(net)
 
     net.stop()
 
@@ -72,8 +135,6 @@ def emulate():
     net.absnode_map['cloud'].destroyall()
     net.absnode_map['fog'].destroyall()
     net.absnode_map['driver'].destroyall()
-
-    # Test containers safely destroyed
 
 if __name__ == '__main__':
     emulate()

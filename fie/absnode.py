@@ -17,7 +17,6 @@ import os
 from subprocess import call
 
 from mininet.util import custom
-from mininet.node import CPULimitedHost
 
 from container import Container
 
@@ -51,10 +50,6 @@ class AbstractionNode():
         self.dockerbridge = None
 
         self.net_default()
-
-    # Create a mininet host as an abstraction node's head node
-    # TODO: USE resource limited host instead of CPULimitedHost
-    
     
     # Inheritent mininet host cmd
     def cmd(self, cmdstr):
