@@ -42,13 +42,27 @@ class Container(object):
         # CHECK THIS: if the pid appears soon after the container created?
         # self.pid = self.log_pid()
     
+    # TODO: Currently, this start is useless, we should find additonal way to let this container start parameters to available since abstraction node
+    def start(self):
+        self.container.start(
+            image=self.image,
+            detach=True, 
+            name=self.name, 
+            network=self.network, 
+            cgroup_parent=self.cg_parent,
+            **self.params)
     def log_pid(self):
         """Logs pid of container, return a string"""
         p = Popen(['sudo', 'docker', 'inspect', self.name], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         output, _ = p.communicate((""))
         inspect = json.loads(output)
         return int(inspect[0]["State"]["Pid"])
-    
+
+    def stop(self):
+        """Stop the running container"""
+
+        self.container.stop()
+
     def destroy(self):
         """Destroy the running container"""
 

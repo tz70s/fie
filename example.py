@@ -77,7 +77,7 @@ class NetworkTopo( Topo ):
         Node capabilities settings
         """
 
-        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1, mem=10, device_write_bps="8:0 512"))
         fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
         driver = self.addHost('driver', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
 

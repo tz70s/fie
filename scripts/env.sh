@@ -1,2 +1,2 @@
-export PYTHONPATH=$PYTHONPATH:$HOME/dockermn/mininet/mininet
-export PYTHONPATH=$PYTHONPATH:$HOME/dockermn
+export PYTHONPATH=$PYTHONPATH:$HOME/fie/mininet/mininet
+export PYTHONPATH=$PYTHONPATH:$HOME/fie

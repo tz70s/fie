@@ -22,8 +22,15 @@ from container import Container
 
 
 class AbstractionNode():
-            
-    # Initialize host/namespace informations
+    """
+     Initialize host/namespace informations
+        head_node, 
+        pid of head_node, 
+        name of abstraction node, 
+        ip_pool, 
+        docker client 
+    as necessary params
+    """
 
     def __init__(self, name, head_node, ip_pool, docker_client, **opts):
         
@@ -51,8 +58,8 @@ class AbstractionNode():
 
         self.net_default()
     
-    # Inheritent mininet host cmd
     def cmd(self, cmdstr):
+        """Inherit mininet host cmd"""
         self.head_node.cmd(cmdstr)
 
     """
@@ -72,20 +79,20 @@ class AbstractionNode():
         =======     ========
     """
 
-    # The default network settings inner abstraction node
     def net_default(self):
+        """The default network settings inner abstraction node"""
         self.create_veth()
         self.createBridge()
         self.set_nat_rules()
 
-    # Create the gateway of abstraction node route
     def create_gateway(self):
+        """Create the gateway of abstraction node route"""
         sub_list = self.ip_pool.split('/')[0].split('.')
         sub_list[-1] = '1'
         return '.'.join(sub_list)
 
-    # Create additional veth for head_node (eth1)
     def create_veth(self):
+        """Create additional veth for head_node (eth1)"""
         # print(self.name + ' : add netns veth pair with docker bridge')
         
         create_link = 'ip link add ' + self.name + '-eth1' + ' type veth peer name ' + self.name + '-dport'
@@ -98,8 +105,8 @@ class AbstractionNode():
         
         self.cmd( 'ifconfig ' + self.name + '-eth1 ' + self.gw)
     
-    # Create docker network a.k.a linux bridge
     def createBridge(self):
+        """Create docker network a.k.a linux bridge"""
 
         # Set the network ip pool for new containers over specific network namespace
         ipam_pool = docker.types.IPAMPool( subnet = self.ip_pool)
@@ -116,8 +123,8 @@ class AbstractionNode():
         call(['brctl', 'addif', self.network, self.name+'-dport'])
         call(['ip', 'link', 'set', 'dev', self.name+'-dport', 'up'])
 
-    # NAT rules setting inner host/namespace
     def set_nat_rules(self):
+        """NAT rules setting inner host/namespace"""
         rules = []
 
         # Postroute
@@ -137,30 +144,47 @@ class AbstractionNode():
         3. Destroy all containers
     """
 
-    # Run a container and add information into the lists keep from abstraction node
     def run(self, image, **params):
+        """Run a container and add information into the lists keep from abstraction node"""      
+
         # Create a class of container
         c = Container(docker_client=self.docker_client, image=image, cg_parent=self.cg, network=self.network, name_parent = self.name, count=len(self.container_list), **params)
         c.run()
         self.container_list.append(c)
         self.pid_list.append(c.log_pid)
-        
-    # Destroy specific container
+
+    def stop(self, container):
+        """Destroy specific container"""
+        for c in self.container_list:
+            if c.name == container:
+                c.stop()
+                return "Successful stop container : " + c.name
+        return "The target container to stop doesn't exist!"
+
+    # Stop all
+    def stopall(self):
+        """Checkout all containers in container_list and stop all of them"""
+        for c in self.container_list:
+            c.stop()
+        # REMARK: the container stop command doesn't remove the docker network    
+
     def destroy(self, container):
+        """Destroy specific container"""
         for c in self.container_list:
             if c.name == container:
                 c.destroy()
                 return "Successful destory container : " + c.name
         return "The target container to destroy doesn't exist!"
 
+    
     # Destroy all
     def destroyall(self):
-        # Checkout all containers in container_list and remove all of them
-        # TODO: Safe remove
+        """Checkout all containers in container_list and remove all of them"""
         for c in self.container_list:
             c.destroy()
         self.dockerbridge.remove()
     
+
     # Set static route to a specific container subnet.
     def route(self, host):
         dest_ip = host.ip_pool.split('/')[0]
