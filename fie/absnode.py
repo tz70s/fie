@@ -34,7 +34,7 @@ class AbstractionNode():
         self.name = name
         self.ip_pool = ip_pool
         self.gw = self.create_gateway()
-        self.cg = self.name
+        self.cg = "/" + self.name
 
         # Network name for creating bridge
         self.network = 'netns-' + self.name
@@ -143,9 +143,9 @@ class AbstractionNode():
     """
 
     # Run a container and add information into the lists keep from abstraction node
-    def run(self, image):
+    def run(self, image, **params):
         # Create a class of container
-        c = Container(docker_client=self.docker_client, image=image, cg_parent=self.cg, network=self.network, name_parent = self.name, count=len(self.container_list_true))
+        c = Container(docker_client=self.docker_client, image=image, cg_parent=self.cg, network=self.network, name_parent = self.name, count=len(self.container_list), **params)
         c.run()
         self.container_list.append(c)
         self.pid_list.append(c.log_pid)

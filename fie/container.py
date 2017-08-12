@@ -18,7 +18,7 @@ TODO: Use Docker python API instead of shell command for more options.
 
 class Container(object):
     """The declaration of container, important method, run, log_pid, destroy"""
-    def __init__(self, docker_client, image, cg_parent, network, name_parent, count):
+    def __init__(self, docker_client, image, cg_parent, network, name_parent, count, **params):
         self.docker_client = docker_client
         self.image = image
         self.cg_parent = cg_parent
@@ -26,16 +26,19 @@ class Container(object):
         # count represented as the numbers of abstraction node containers list, used for dealing with naming conflicts. 
         self.name = name_parent + '-' + str(count)
         self.pid = None
-    
+        self.params = params
+        self.container = None
+
     def run(self):
         """Run an container"""
-        namestr = self.image.split('/')[-1]
-
-        call(['docker', 'run', '-itd', '--cgroup-parent=/' + self.cg_parent, \
-            '--network=' + self.network , \
-            '--name=' + self.name, self.image], \
-            stdout=open(os.devnull, "w"), stderr=STDOUT)
-        
+        self.container = self.docker_client.containers.run( 
+            image=self.image,
+            detach=True, 
+            name=self.name, 
+            network=self.network, 
+            cgroup_parent=self.cg_parent,
+            **self.params
+            )
         # CHECK THIS: if the pid appears soon after the container created?
         # self.pid = self.log_pid()
     
@@ -48,4 +51,9 @@ class Container(object):
     
     def destroy(self):
         """Destroy the running container"""
-        call(['docker', 'rm', '-f', self.name], stdout=open(os.devnull, "w"), stderr=STDOUT)
+
+        # CONCERN: Do we really need the step of safe stop?
+        # timeout 10 secs
+        # self.container.stop()
+        self.container.remove(force=True)
+        

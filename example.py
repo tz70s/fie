@@ -76,9 +76,10 @@ class NetworkTopo( Topo ):
         """
         Node capabilities settings
         """
-        cloud = self.addHost('cloud', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
-        fog = self.addHost('fog', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
-        driver = self.addHost('driver', cls=custom(RsLimitedHost, sched='cfs', period_us=50000, cpu=0.025, mem=10))
+
+        cloud = self.addHost('cloud', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
+        fog = self.addHost('fog', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
+        driver = self.addHost('driver', cls=custom(RsLimitedHost, cpu=0.1, mem=10))
 
         self.addLink( s1, cloud, intf=CloudIntf )
         self.addLink( s1, s2, intf=FogCloudIntf )
@@ -113,9 +114,18 @@ Architecture:
     net.start()
     net.routeAll()
     
-    net.absnode_map['cloud'].run('tz70s/node-server')
-    net.absnode_map['fog'].run('tz70s/node-server')
-    net.absnode_map['driver'].run('tz70s/node-server')
+    """
+    TODO: For internal container configuration =>
+        We have **kwargs currently, so it's available of setting contaienr for more options.
+        Including cpu_period, cpu_quota (not like fraction, it is represented in ms), mem_limit, etc.
+        You can specifiy it => absnode_map['test'].run('image', cpu_quota=1000)
+        The problem is, should we automatically compute the relative portion of internal containers? Or, let them remained in the absolute number?
+    """
+    
+    net.absnode_map['cloud'].run('tz70s/busy-wait', cpu_quota=1000) # This will makes the quota of absnode cloud almost full
+    net.absnode_map['cloud'].run('tz70s/busy-wait')
+    net.absnode_map['fog'].run('tz70s/busy-wait')
+    net.absnode_map['driver'].run('tz70s/busy-wait')
     
     CLI(net)
 
