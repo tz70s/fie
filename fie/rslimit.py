@@ -23,7 +23,6 @@ class RSLimitedHost(CPULimitedHost):
         if not RSLimitedHost.inited:
             RSLimitedHost.init()
         
-        # TODO: Add DISK
         self.cgroup = 'cpu,cpuacct,cpuset,memory,blkio:/' + self.name
 
         errFail( 'cgcreate -g ' + self.cgroup )
@@ -82,7 +81,7 @@ class RSLimitedHost(CPULimitedHost):
     #   => The limit cannot be set if the cgroup have children, or if there are already tasks in the cgroup
 
   
-    def setMem( self, mem=0, kmem=0, oom_control=0, swappiness=None):
+    def setMem( self, mem=0):
         """
         Set memory hard limit.
         The mininmum memory limitation is 1MB.
@@ -94,7 +93,20 @@ class RSLimitedHost(CPULimitedHost):
             # 1MB
             mega = 1024*1024
             self.cgroupSet( resource = 'memory', param='limit_in_bytes', value=mem*mega)
-    
+
+    def setMemSW( self, memsw=0):
+        """
+        Set memory hard limit.
+        The mininmum memory limitation is 1MB.
+        """
+
+        if memsw != 0:
+            if memsw < 1:
+                memsw = 1
+            # 1MB
+            mega = 1024*1024
+            self.cgroupSet( resource = 'memory', param='memsw.limit_in_bytes', value=memsw*mega)
+
     def setOOM(self, oom_control=0):
         """Out of memory enable/disable"""
 
@@ -155,7 +167,7 @@ class RSLimitedHost(CPULimitedHost):
     # Overwrite config
     def config( self,
         cpu=-1,cores=None,
-        mem=0, oom_control=0, swappiness=None,
+        mem=0, memsw=0, oom_control=0, swappiness=None,
         device_write_bps=None, device_write_iops=None,
         device_read_bps=None, device_read_iops=None,
         blkio_weight=None, blkio_weight_device=None,
@@ -166,6 +178,7 @@ class RSLimitedHost(CPULimitedHost):
         # Add memory for params, mininet already add to setCPUs function, but not used though.
         self.setParam(r, 'setCPUFrac', cpu=cpu)
         self.setParam(r, 'setMem', mem=mem)
+        self.setParam(r, 'setMemSw', memsw=memsw)
         self.setParam(r, 'setOOM', oom_control=oom_control)
         self.setParam(r, 'setSwappiness', swappiness=swappiness)
         self.setParam(r, 'setCPUs', cores=cores)

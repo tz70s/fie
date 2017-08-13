@@ -78,7 +78,7 @@ class NetworkTopo( Topo ):
         """
 
         cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1,
-            mem=10, oom_control=1, swappiness=60,
+            mem=10, memsw=20, oom_control=1, swappiness=60,
             device_write_bps="8:0 1024")) # /dev/sda write 1024 bytes per sec 
         
         fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
