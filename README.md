@@ -45,8 +45,8 @@ sudo ./scripts/install.sh
 
 ```BASH
 # Add dependencies
-export PYTHONPATH = "$PYTHONPATH:/path/to/mininet"
-export PYTHONPATH = "$PYTHONPATH:/path/to/fie"
+export PYTHONPATH="$PYTHONPATH:/path/to/mininet"
+export PYTHONPATH="$PYTHONPATH:/path/to/fie"
 
 # Run an example
 sudo ./example.py
