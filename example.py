@@ -7,7 +7,7 @@ Checkout the License for using, modifying and publishing.
 """
 
 
-from mininet.cli import CLI
+from fie.cli import FCLI
 from mininet.util import custom
 from mininet.link import TCIntf, Intf
 from mininet.topo import Topo
@@ -96,7 +96,7 @@ def emulate():
     
     print("""
 
-This work is a demonstration of bridging network namespace in mininet and docker containers
+Demonstration of fog infrastructure emulation.
     
 Architecture:
     =======     ========
@@ -130,7 +130,7 @@ Architecture:
     net.absnode_map['fog'].run('tz70s/busy-wait')
     net.absnode_map['driver'].run('tz70s/busy-wait')
     
-    CLI(net)
+    FCLI(net)
 
     net.stop()
 
