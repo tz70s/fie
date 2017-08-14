@@ -17,7 +17,9 @@ from subprocess import call, check_call
 
 
 class RSLimitedHost(CPULimitedHost):
+    """The Resource Limited Host Class"""
     def __init__( self, name, sched='cfs', **kwargs ):
+        """Initailized Resource Limited Host Class"""
         Host.__init__( self, name, **kwargs )
         # Initialize class if necessary
         if not RSLimitedHost.inited:
@@ -33,13 +35,6 @@ class RSLimitedHost(CPULimitedHost):
         if sched == 'rt':
             self.checkRtGroupSched()
             self.rtprio = 20
-
-    def run(cmd):
-        """
-        Simple interface to subprocess.call()
-        cmd: list of command params
-        """
-        return call(cmd)
 
     # Overwrite cgroupSet for ignore blkio
     def cgroupSet( self, param, value, resource='cpu' ):

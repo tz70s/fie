@@ -16,6 +16,7 @@ from env import Env
 
 
 class FIE(Mininet):
+    """FIE Class inherit from Mininet class as the core configuration"""
     def __init__(self, topo=None, switch=OVSKernelSwitch, host=Host,
                   controller=DefaultController, link=Link, intf=Intf,
                   build=True, xterms=False, cleanup=False, ipBase='10.0.0.0/8',
@@ -30,6 +31,9 @@ class FIE(Mininet):
                   autoSetMacs, autoStaticArp, autoPinCpus,
                   listenPort, waitConnected)
         
+        # We add abstraction nodes in this class.
+        # Automatically wraps mininet host, containers, internal network
+
         self.absnode_map = {}
 
         e = Env(len(self.hosts))
@@ -37,6 +41,7 @@ class FIE(Mininet):
         for h in self.hosts:
             self.absnode_map[h.name] = AbstractionNode(h.name, h, e.assign_cidr(), e.docker_client)
 
+    # May move to another ideal, meaningful place
     def routeAll(self):
         """(Add static) Route all the hosts"""
         for host in self.absnode_map:

@@ -13,11 +13,8 @@ Checkout the docs for more detailed abstraction node concepts.
 
 import docker
 import os
-
 from subprocess import call
-
 from mininet.util import custom
-
 from container import Container
 
 
@@ -27,14 +24,17 @@ class AbstractionNode():
         head_node, 
         pid of head_node, 
         name of abstraction node, 
-        ip_pool, 
-        docker client 
+        ip_pool,
+        cgroup,
+        docker client
+        network,
+        container_list,
+        pid_list 
     as necessary params
     """
 
     def __init__(self, name, head_node, ip_pool, docker_client, **opts):
-        
-        # self.head_node_cls = self.config_head_node(**opts)
+        """Initialization"""
         self.head_node = head_node
         self.pid = str(head_node.pid)
         self.name = name
@@ -53,7 +53,6 @@ class AbstractionNode():
         self.container_list = []
         self.pid_list = []
 
-        self.container_list_true = []
         self.dockerbridge = None
 
         self.net_default()
@@ -176,7 +175,6 @@ class AbstractionNode():
                 return "Successful destory container : " + c.name
         return "The target container to destroy doesn't exist!"
 
-    
     # Destroy all
     def destroyall(self):
         """Checkout all containers in container_list and remove all of them"""
@@ -184,8 +182,9 @@ class AbstractionNode():
             c.destroy()
         self.dockerbridge.remove()
     
-    # Set static route to a specific container subnet.
+    # Set static route
     def route(self, host):
+        """Set static route to a specific container subnet"""
         dest_ip = host.ip_pool.split('/')[0]
         dest_gw = host.head_node.IP(host.name+'-eth0')
         self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' + dest_gw + ' dev ' + self.name + '-eth0')

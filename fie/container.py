@@ -30,7 +30,7 @@ class Container(object):
         self.container = None
 
     def run(self):
-        """Run an container"""
+        """Run a container"""
         self.container = self.docker_client.containers.run( 
             image=self.image,
             detach=True, 
@@ -44,6 +44,7 @@ class Container(object):
     
     # TODO: Currently, this start is useless, we should find additonal way to let this container start parameters to available since abstraction node
     def start(self):
+        """Start an existed container"""
         self.container.start(
             image=self.image,
             detach=True, 
@@ -51,6 +52,7 @@ class Container(object):
             network=self.network, 
             cgroup_parent=self.cg_parent,
             **self.params)
+
     def log_pid(self):
         """Logs pid of container, return a string"""
         p = Popen(['sudo', 'docker', 'inspect', self.name], stdin=PIPE, stdout=PIPE, stderr=PIPE)

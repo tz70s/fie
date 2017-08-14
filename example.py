@@ -55,7 +55,6 @@ class NetworkTopo( Topo ):
 
     " define network topo "
 
-
     def build( self, **_opts ):
 
         # Add switches
@@ -90,8 +89,7 @@ class NetworkTopo( Topo ):
         self.addLink( s2, fog, intf=FogCloudIntf )
         self.addLink( s3, driver, intf=DriverFogIntf )
 
-# Hardware interface
-
+# Emulate the network topo
 def emulate():
     
     print("""
