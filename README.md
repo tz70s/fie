@@ -1,45 +1,51 @@
-## Mininet example of the Multi-Docker-Containers-as-a-Single-Host 
+# Fog Infrastructure Emulation
 
-A prototyping extension of mininet-based network emulation for integrating multi-containers-as-a-single-host concept.
+An enironement for evaluating containerized applications based-on mininet.
 
 [![Build Status](https://travis-ci.org/tz70s/fie.svg?branch=master)](https://travis-ci.org/tz70s/fie)
-## Objective
 
-1. To support multiple Docker containers “running” in a single host with no interference with the normal usage.
-2. To clarify the Docker containers and original host scenario, we can name it as an “abstraction node” here. We should have an additional mechanism of the cpu, memory limitation of docker containers running in the “abstraction nodes”. 
-3. Also, the original network namespace or Docker container which represented as a host should also be restricted in the abstraction node.
+### Abstraction Node
+We extend cgroups and set _internal_ network topo for multiple containers run along with original mininet network namespace, which we name it as an **_Abstraction Node_**. The abstraction node is **close to the real world PC that we use**.
 
-## The specific host along with multiple containers are seen as a single identity - abstraction node
+### Support Extended Resource Limitation Options
 
-1. User can set the resource limitation for the specific abstraction node.
-2. User can set the resource limitation for the specific container running in the abstraction node.
-3. User can choose to not set the resource limitation for the specific container running in the abstraction node, but the maximum resource usage of the containers running in the specific abstraction node will not exceed the limitation it sets.
+For **_CPU_**,
 
-## [Reference issue](https://github.com/containernet/containernet/issues/29)
+* `cpu_cfs_period`
+* `cpu_cfs_runtime`
+* `cpu_cfs_share`
+* `cpu_rt_period`
+* `cpu_rt_runtime`
+* `cpu_rt_share`
 
-* python verison
+For **_Memory_**,
 
-```BASH
-# Problems of mininet support python3
-2.7.12
+* `memory_hard_limit`
+* `memory_oom_control`
+* `memory_swappiness`
+* `memory_memsw_limit`
 
-# Dependencies
-pip install docker
+For **_Blkio_**,
 
-```
+* `blkio_write_bps_device`
+* `blkio_write_iops_device`
+* `blkio_read_bps_device`
+* `blkio_read_iops_device`
+* `blkio_weight`
+* `blkio_weight_device`
 
-* mininet version
-
-```BASH
-2.3.0d1
-``` 
-
-* Execution
+### Installation
 
 ```BASH
 # Install dep
-sudo ./scripts/start.sh
+sudo ./scripts/install.sh
+# Dependencies
+pip install docker
+```
 
+### Execution
+
+```BASH
 # Add dependencies
 export PYTHONPATH = "$PYTHONPATH:/path/to/mininet"
 export PYTHONPATH = "$PYTHONPATH:/path/to/fie"
@@ -47,4 +53,3 @@ export PYTHONPATH = "$PYTHONPATH:/path/to/fie"
 # Run an example
 sudo ./example.py
 ```
-
