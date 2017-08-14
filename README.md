@@ -39,8 +39,6 @@ For **_Blkio_**,
 ```BASH
 # Install dep
 sudo ./scripts/install.sh
-# Dependencies
-pip install docker
 ```
 
 ### Execution
