@@ -79,7 +79,7 @@ class RSLimitedHost(CPULimitedHost):
     def setMem( self, mem=0):
         """
         Set memory hard limit.
-        The mininmum memory limitation is 1MB.
+        The mininmum memory limitation is 1MB, and the basic unit is also 1MB.
         """
 
         if mem != 0:
@@ -91,8 +91,8 @@ class RSLimitedHost(CPULimitedHost):
 
     def setMemSW( self, memsw=0):
         """
-        Set memory hard limit.
-        The mininmum memory limitation is 1MB.
+        Set virtual memory hard limit.
+        The mininmum memory limitation is 1MB, and the basic unit is also 1MB.
         """
 
         if memsw != 0:
