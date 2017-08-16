@@ -7,7 +7,7 @@ Checkout the License for using, modifying and publishing.
 """
 
 
-from mininet.cli import CLI
+from fie.cli import FCLI
 from mininet.util import custom
 from mininet.link import TCIntf, Intf
 from mininet.topo import Topo
@@ -55,7 +55,6 @@ class NetworkTopo( Topo ):
 
     " define network topo "
 
-
     def build( self, **_opts ):
 
         # Add switches
@@ -77,7 +76,10 @@ class NetworkTopo( Topo ):
         Node capabilities settings
         """
 
-        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1,
+            mem=10, memsw=20, oom_control=1, swappiness=60,
+            device_write_bps="8:0 1024")) # /dev/sda write 1024 bytes per sec 
+        
         fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
         driver = self.addHost('driver', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
 
@@ -87,13 +89,12 @@ class NetworkTopo( Topo ):
         self.addLink( s2, fog, intf=FogCloudIntf )
         self.addLink( s3, driver, intf=DriverFogIntf )
 
-# Hardware interface
-
+# Emulate the network topo
 def emulate():
     
     print("""
 
-This work is a demonstration of bridging network namespace in mininet and docker containers
+Demonstration of fog infrastructure emulation.
     
 Architecture:
     =======     ========
@@ -127,7 +128,7 @@ Architecture:
     net.absnode_map['fog'].run('tz70s/busy-wait')
     net.absnode_map['driver'].run('tz70s/busy-wait')
     
-    CLI(net)
+    FCLI(net)
 
     net.stop()
 
