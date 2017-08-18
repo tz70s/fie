@@ -70,7 +70,8 @@ class RSLimitedHost(CPULimitedHost):
     # Set cgroup memory metrics, support:
     #     memory_limit_in_bytes,
     #     oom_control (0 or 1),
-    #     swapniess (0-100)
+    #     swapniess (0-100),
+    #     memorysw_limit_in_bytes
 
     # Originally we want to support kmem_limit_in_bytes, but (in linux cgroup manual)
     #   => The limit cannot be set if the cgroup have children, or if there are already tasks in the cgroup
