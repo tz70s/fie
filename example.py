@@ -107,35 +107,24 @@ Architecture:
     )
     
     # Set mininet settings
-    
     topo = NetworkTopo()
     # The abstraction node automatically wrapped here.
     net = FIE( topo=topo )
     
-    net.start()
-    net.routeAll()
-    
-    """
-    TODO: For internal container configuration =>
-        We have **kwargs currently, so it's available of setting contaienr for more options.
-        Including cpu_period, cpu_quota (not like fraction, it is represented in ms), mem_limit, etc.
-        You can specifiy it => absnode_map['test'].run('image', cpu_quota=1000)
-        The problem is, should we automatically compute the relative portion of internal containers? Or, let them remained in the absolute number?
-    """
-    
-    net.absnode_map['cloud'].run('tz70s/busy-wait', cpu_quota=1000) # This will makes the quota of absnode cloud almost full
-    net.absnode_map['cloud'].run('tz70s/busy-wait')
-    net.absnode_map['fog'].run('tz70s/busy-wait')
-    net.absnode_map['driver'].run('tz70s/busy-wait')
-    
-    FCLI(net)
+    try:
+        net.start()
+        net.routeAll()
+        
+        net.absnode_map['cloud'].run('tz70s/kuery:0.1.3.1')
+        net.absnode_map['fog'].run('tz70s/kuery:0.1.3.1')
+        net.absnode_map['driver'].run('tz70s/kuery:0.1.3.1')
+        FCLI(net)
 
-    net.stop()
-
-    # destroy containers and bridges
-    net.absnode_map['cloud'].destroyall()
-    net.absnode_map['fog'].destroyall()
-    net.absnode_map['driver'].destroyall()
+    finally:
+        net.absnode_map['cloud'].destroyall()
+        net.absnode_map['fog'].destroyall()
+        net.absnode_map['driver'].destroyall()
+        net.stop()
 
 if __name__ == '__main__':
     emulate()

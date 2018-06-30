@@ -21,7 +21,7 @@ git clone git://github.com/mininet/mininet.git
 cd mininet
 sudo util/install.sh -a
 
-pip install docker
+pip install -I docker==3.4.1
 
 export PYTHONPATH="$PYTHONPATH:$HOME/mininet/mininet"
 export PYTHONPATH="$PYTHONPATH:$HOME/fie"
