@@ -16,7 +16,8 @@ import sys
 from cmd import Cmd
 from subprocess import call
 
-class FCLI( CLI ):
+
+class FCLI(CLI):
     def __init__(self, FIE, stdin=sys.stdin, script=None):
         CLI.__init__(self, FIE, stdin, script)
         Cmd.__init__(self)
@@ -28,7 +29,7 @@ class FCLI( CLI ):
         $ docker 
         """
         self.do_sh("docker" + " " + line)
-    
+
     def do_top(self, _line):
         """Top for perf monitoring"""
         self.do_sh("top")

@@ -7,18 +7,26 @@ Checkout the License for using, modifying and publishing.
 """
 
 from mininet.util import quietRun
+import docker
 
 
-def checkIntf( intf ):
+def checkIntf(intf):
     "Make sure intf exists and is not configured."
-    config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
+    config = quietRun('ifconfig %s 2>/dev/null' % intf, shell=True)
     if not config:
-        print( 'Error:', intf, 'does not exist!\n' )
-        exit( 1 )
+        print('Error:', intf, 'does not exist!\n')
+        exit(1)
 
     # TODO: Regular expression
-    ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
+    ips = re.findall(r'\d+\.\d+\.\d+\.\d+', config)
     if ips:
-        print( 'Error:', intf, 'has an IP address,'
-               'and is probably in use!\n' )
-        exit( 1 )
+        print('Error:', intf, 'has an IP address,'
+              'and is probably in use!\n')
+        exit(1)
+
+
+def implicit_dns():
+    client = docker.APIClient(base_url='unix://var/run/docker.sock')
+    details = client.inspect_container('dns')
+    ip = details['NetworkSettings']['Networks']['netns-cloud']['IPAddress']
+    return ip

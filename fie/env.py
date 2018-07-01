@@ -8,8 +8,10 @@ Checkout the License for using, modifying and publishing.
 
 import docker
 
+
 class Env(object):
     """The declaration of some share variables."""
+
     def __init__(self, node_num):
         self.docker_client = self.init_docker_client()
         self.cidr_list = self.set_cidr(node_num)
@@ -17,7 +19,8 @@ class Env(object):
 
     def init_docker_client(self):
         """Init docker client for docker daemon api """
-        client = docker.DockerClient(base_url = 'unix://var/run/docker.sock', version = 'auto')
+        client = docker.DockerClient(
+            base_url='unix://var/run/docker.sock', version='auto')
         return client
 
     def set_cidr(self, node_num):
@@ -26,7 +29,7 @@ class Env(object):
         if node_num > 200:
             print("We don't support nodes exceed 200 currently")
             exit(1)
-        
+
         sub = node_num
         cidr_list = []
         for _ in range(node_num):

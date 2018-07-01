@@ -47,8 +47,8 @@ class AbstractionNode():
 
         # Initialize docker client
         self.docker_client = docker_client
-        
-        # Initialize lists of containers and pids 
+
+        # Initialize lists of containers and pids
 
         self.container_list = []
         self.pid_list = []
@@ -56,7 +56,7 @@ class AbstractionNode():
         self.dockerbridge = None
 
         self.net_default()
-    
+
     def cmd(self, cmdstr):
         """Inherit mininet host cmd"""
         self.head_node.cmd(cmdstr)
@@ -93,31 +93,32 @@ class AbstractionNode():
     def create_veth(self):
         """Create additional veth for head_node (eth1)"""
         # print(self.name + ' : add netns veth pair with docker bridge')
-        
-        create_link = 'ip link add ' + self.name + '-eth1' + ' type veth peer name ' + self.name + '-dport'
+
+        create_link = 'ip link add ' + self.name + '-eth1' + \
+            ' type veth peer name ' + self.name + '-dport'
         up_link = 'ip link set dev ' + self.name + '-eth1' + ' up'
         set_ns = 'ip link set netns ' + self.pid + ' dev ' + self.name + '-eth1'
 
         call(create_link.split(' '))
         call(up_link.split(' '))
         call(set_ns.split(' '))
-        
-        self.cmd( 'ifconfig ' + self.name + '-eth1 ' + self.gw)
-    
+
+        self.cmd('ifconfig ' + self.name + '-eth1 ' + self.gw)
+
     def createBridge(self):
         """Create docker network a.k.a linux bridge"""
 
         # Set the network ip pool for new containers over specific network namespace
-        ipam_pool = docker.types.IPAMPool( subnet = self.ip_pool)
-        ipam_config = docker.types.IPAMConfig( pool_configs = [ipam_pool] )
-        
-        
+        ipam_pool = docker.types.IPAMPool(subnet=self.ip_pool)
+        ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
+
         opts = {
             'com.docker.network.bridge.name': self.network,
         }
 
-        self.dockerbridge = self.docker_client.networks.create(self.network, driver='bridge', ipam=ipam_config, options=opts)
-        
+        self.dockerbridge = self.docker_client.networks.create(
+            self.network, driver='bridge', ipam=ipam_config, options=opts)
+
         # Patch veth with docker network bridges
         call(['brctl', 'addif', self.network, self.name+'-dport'])
         call(['ip', 'link', 'set', 'dev', self.name+'-dport', 'up'])
@@ -127,12 +128,21 @@ class AbstractionNode():
         rules = []
 
         # Postroute
-        rules.append('iptables -t nat -A POSTROUTING -o ' + self.name + '-eth0 -j MASQUERADE')
+        rules.append('iptables -t nat -A POSTROUTING -o ' +
+                     self.name + '-eth0 -j MASQUERADE')
         # Conn
-        rules.append('iptables -A FORWARD -i ' + self.name + '-eth0 -o ' + self.name + '-eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT')
+        rules.append('iptables -A FORWARD -i ' + self.name + '-eth0 -o ' +
+                     self.name + '-eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT')
         # Accept
-        rules.append('iptables -A FORWARD -i ' + self.name + '-eth1 -o ' + self.name + '-eth0 -j ACCEPT')
-        
+        rules.append('iptables -A FORWARD -i ' + self.name +
+                     '-eth1 -o ' + self.name + '-eth0 -j ACCEPT')
+        # Allow all outcoming
+        rules.append('iptables -A OUTPUT -j ACCEPT')
+        # Allow all incoming
+        rules.append('iptables -A INPUT -j ACCEPT')
+        # Allow all forwarding
+        rules.append('iptables -A FORWARD -j ACCEPT')
+
         for rule in rules:
             self.cmd(rule)
 
@@ -144,10 +154,11 @@ class AbstractionNode():
     """
 
     def run(self, image, **params):
-        """Run a container and add information into the lists keep from abstraction node"""      
+        """Run a container and add information into the lists keep from abstraction node"""
 
         # Create a class of container
-        c = Container(docker_client=self.docker_client, image=image, cg_parent=self.cg, network=self.network, name_parent = self.name, count=len(self.container_list), **params)
+        c = Container(docker_client=self.docker_client, image=image, cg_parent=self.cg,
+                      network=self.network, name_parent=self.name, count=len(self.container_list), **params)
         c.run()
         self.container_list.append(c)
         self.pid_list.append(c.log_pid)
@@ -165,7 +176,7 @@ class AbstractionNode():
         """Checkout all containers in container_list and stop all of them"""
         for c in self.container_list:
             c.stop()
-        # REMARK: the container stop command doesn't remove the docker network    
+        # REMARK: the container stop command doesn't remove the docker network
 
     def destroy(self, container):
         """Destroy specific container"""
@@ -181,10 +192,11 @@ class AbstractionNode():
         for c in self.container_list:
             c.destroy()
         self.dockerbridge.remove()
-    
+
     # Set static route
     def route(self, host):
         """Set static route to a specific container subnet"""
         dest_ip = host.ip_pool.split('/')[0]
         dest_gw = host.head_node.IP(host.name+'-eth0')
-        self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' + dest_gw + ' dev ' + self.name + '-eth0')
+        self.cmd('route add -net ' + dest_ip + ' netmask 255.255.255.0 gw ' +
+                 dest_gw + ' dev ' + self.name + '-eth0')

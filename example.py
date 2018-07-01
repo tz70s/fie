@@ -17,7 +17,8 @@ from fie.env import Env
 from fie.fie import FIE
 from fie.rslimit import RSLimitedHost
 import fie.utils
-
+from fie.utils import implicit_dns
+import time
 
 """
 Simple emptyNet for h1, h2, s1, c0 architecture
@@ -51,22 +52,23 @@ Usage
 
 """
 
-class NetworkTopo( Topo ):
+
+class NetworkTopo(Topo):
 
     " define network topo "
 
-    def build( self, **_opts ):
+    def build(self, **_opts):
 
         # Add switches
-        s1, s2, s3 = [ self.addSwitch( s ) for s in 's1', 's2', 's3' ]
-        
-        # Custom interface 
+        s1, s2, s3 = [self.addSwitch(s) for s in 's1', 's2', 's3']
+
+        # Custom interface
         DriverFogIntf = custom(TCIntf, bw=5)
         FogCloudIntf = custom(TCIntf, bw=15)
         CloudIntf = custom(TCIntf, bw=50)
 
         # Hardware interface
-        
+
         # IntfName = "enp4s30xxxx"
         # checkIntf(IntfName)
         # patch hardware interface to switch s3
@@ -76,22 +78,25 @@ class NetworkTopo( Topo ):
         Node capabilities settings
         """
 
-        cloud = self.addHost('cloud', cls=custom(RSLimitedHost, cpu=0.1,
-            mem=10, memsw=20, oom_control=1, swappiness=60,
-            device_write_bps="8:0 1024")) # /dev/sda write 1024 bytes per sec 
-        
-        fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
-        driver = self.addHost('driver', cls=custom(RSLimitedHost, cpu=0.1, mem=10))
+        cloud = self.addHost('cloud', cls=custom(
+            RSLimitedHost, cpu=0.3, mem=400))
 
-        self.addLink( s1, cloud, intf=CloudIntf )
-        self.addLink( s1, s2, intf=FogCloudIntf )
-        self.addLink( s1, s3, intf=FogCloudIntf )
-        self.addLink( s2, fog, intf=FogCloudIntf )
-        self.addLink( s3, driver, intf=DriverFogIntf )
+        fog = self.addHost('fog', cls=custom(RSLimitedHost, cpu=0.2, mem=300))
+
+        driver = self.addHost('driver', cls=custom(
+            RSLimitedHost, cpu=0.1, mem=200))
+
+        self.addLink(s1, cloud, intf=CloudIntf)
+        self.addLink(s1, s2, intf=FogCloudIntf)
+        self.addLink(s1, s3, intf=FogCloudIntf)
+        self.addLink(s2, fog, intf=FogCloudIntf)
+        self.addLink(s3, driver, intf=DriverFogIntf)
 
 # Emulate the network topo
+
+
 def emulate():
-    
+
     print("""
 
 Demonstration of fog infrastructure emulation.
@@ -104,20 +109,26 @@ Architecture:
     =======     ========
     
     """
-    )
-    
+          )
+
     # Set mininet settings
     topo = NetworkTopo()
     # The abstraction node automatically wrapped here.
-    net = FIE( topo=topo )
-    
+    net = FIE(topo=topo)
+
     try:
         net.start()
         net.routeAll()
-        
-        net.absnode_map['cloud'].run('tz70s/kuery:0.1.3.1')
-        net.absnode_map['fog'].run('tz70s/kuery:0.1.3.1')
-        net.absnode_map['driver'].run('tz70s/kuery:0.1.3.1')
+
+        net.absnode_map['cloud'].run('phensley/docker-dns',
+                                     name='dns',
+                                     volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
+        net.absnode_map['cloud'].run('tz70s/reactive-city:0.1.0',
+                                     name='controller', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller', 'CLUSTER_HOST_IP': 'controller'}, command='-r controller -l cloud')
+
+        net.absnode_map['fog'].run('tz70s/reactive-city:0.1.0',
+                                   name='analytics', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller', 'CLUSTER_HOST_IP': 'analytics'}, command='-r analytics -l fog-west')
+
         FCLI(net)
 
     finally:
@@ -125,6 +136,7 @@ Architecture:
         net.absnode_map['fog'].destroyall()
         net.absnode_map['driver'].destroyall()
         net.stop()
+
 
 if __name__ == '__main__':
     emulate()

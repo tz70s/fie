@@ -27,10 +27,12 @@ $script = <<SCRIPT
 	cd mininet
 	sudo util/install.sh -a
 	
-	pip install docker psutil
+	pip install psutil
+	pip install -I docker==3.4.1
 
-	cd /home/ubuntu/fie
-	cp dock-mn.py mininet/
+	export PYTHONPATH="$PYTHONPATH:$HOME/mininet/mininet"
+	export PYTHONPATH="$PYTHONPATH:$HOME/fie"
+
 SCRIPT
 
 Vagrant.configure("2") do |config|
