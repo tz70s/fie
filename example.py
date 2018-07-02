@@ -63,9 +63,9 @@ class NetworkTopo(Topo):
         s1, s2, s3 = [self.addSwitch(s) for s in 's1', 's2', 's3']
 
         # Custom interface
-        DriverFogIntf = custom(TCIntf, bw=10)
-        FogCloudIntf = custom(TCIntf, bw=20)
-        CloudIntf = custom(TCIntf, bw=50)
+        DriverFogIntf = custom(TCIntf, bw=100, delay='10ms')
+        FogCloudIntf = custom(TCIntf, bw=200, delay='100ms')
+        InClusterIntf = custom(TCIntf, bw=1000)
 
         # Hardware interface
 
@@ -79,35 +79,35 @@ class NetworkTopo(Topo):
         """
 
         cloud0 = self.addHost('cloud0', cls=custom(
-            RSLimitedHost, cpu=0.2, mem=400))
+            RSLimitedHost, cpu=0.5, mem=512))
         cloud1 = self.addHost('cloud1', cls=custom(
-            RSLimitedHost, cpu=0.2, mem=400))
+            RSLimitedHost, cpu=0.5, mem=512))
 
         fog0 = self.addHost('fog0', cls=custom(
-            RSLimitedHost, cpu=0.15, mem=300))
+            RSLimitedHost, cpu=0.3, mem=512))
         fog1 = self.addHost('fog1', cls=custom(
-            RSLimitedHost, cpu=0.15, mem=300))
+            RSLimitedHost, cpu=0.3, mem=512))
 
         driver0 = self.addHost('driver0', cls=custom(
-            RSLimitedHost, cpu=0.1, mem=200))
+            RSLimitedHost, cpu=0.3, mem=256))
         driver1 = self.addHost('driver1', cls=custom(
-            RSLimitedHost, cpu=0.1, mem=200))
+            RSLimitedHost, cpu=0.3, mem=256))
 
         # Link switch s1 with cloud nodes.
-        self.addLink(s1, cloud0, intf=CloudIntf)
-        self.addLink(s1, cloud1, intf=CloudIntf)
+        self.addLink(s1, cloud0, intf=InClusterIntf)
+        self.addLink(s1, cloud1, intf=InClusterIntf)
 
         # s1 -- s2
         self.addLink(s1, s2, intf=FogCloudIntf)
         # s2 -- s3
-        self.addLink(s2, s3, intf=FogCloudIntf)
+        self.addLink(s2, s3, intf=DriverFogIntf)
 
         # Link switch s2 with fog nodes
-        self.addLink(s2, fog0, intf=FogCloudIntf)
-        self.addLink(s2, fog1, intf=FogCloudIntf)
+        self.addLink(s2, fog0, intf=InClusterIntf)
+        self.addLink(s2, fog1, intf=InClusterIntf)
 
-        self.addLink(s3, driver0, intf=DriverFogIntf)
-        self.addLink(s3, driver1, intf=DriverFogIntf)
+        self.addLink(s3, driver0, intf=InClusterIntf)
+        self.addLink(s3, driver1, intf=InClusterIntf)
 
 # Emulate the network topo
 
@@ -119,11 +119,11 @@ def emulate():
 Demonstration of fog infrastructure emulation.
     
 Architecture:
-    =======     ========
-    |     |     |Docker|---CONTAINER
-    |netns|=====|      |---CONTAINER
-    |     |     |Bridge|---CONTAINER
-    =======     ========
+    =======     =========
+    |     |     |       |---CONTAINER
+    |netns|=====|macvlan|---CONTAINER
+    |     |     |       |---CONTAINER
+    =======     =========
     
     """
           )
@@ -142,19 +142,22 @@ Architecture:
                                name='dns',
                                volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
 
-        net.node('cloud1').run('tz70s/reactive-city:0.1.2',
+        net.node('cloud1').run('tz70s/reactive-city:0.1.3',
                                name='controller', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'controller.docker'}, command='-r controller -l cloud')
 
-        net.node('fog0').run('tz70s/reactive-city:0.1.2',
+        net.node('fog0').run('tz70s/reactive-city:0.1.3',
                              name='partition', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'partition.docker'}, command='-r partition -l fog-west')
 
-        net.node('fog1').run('tz70s/reactive-city:0.1.2',
+        net.node('fog1').run('tz70s/reactive-city:0.1.3',
                              name='analytics', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'analytics.docker'}, command='-r analytics -l fog-west')
 
-        net.node('fog1').run('tz70s/reactive-city:0.1.2',
+        net.node('fog1').run('tz70s/reactive-city:0.1.3',
                              name='reflector', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'reflector.docker'}, command='-r reflector -l fog-west')
 
-        net.node('driver0').run('tz70s/reactive-city:0.1.2',
+        net.node('cloud1').run('tz70s/reactive-city:0.1.3',
+                               name='reflector-cloud', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'reflector-cloud.docker'}, command='-r reflector -l fog-west')
+
+        net.node('driver0').run('tz70s/reactive-city:0.1.3',
                                 name='simulator', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'simulator.docker'}, command='-r simulator -l fog-west', restart_policy={'Name': 'always'})
 
         FCLI(net)

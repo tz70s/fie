@@ -19,6 +19,7 @@ from subprocess import call
 
 class FCLI(CLI):
     def __init__(self, FIE, stdin=sys.stdin, script=None):
+        self._fie = FIE
         CLI.__init__(self, FIE, stdin, script)
         Cmd.__init__(self)
 
@@ -37,3 +38,23 @@ class FCLI(CLI):
     def do_clear(self, _line):
         """Clear the terminal"""
         self.do_sh("clear")
+
+    def do_migrate(self, _line):
+        """
+        Migrate container to dst node.
+        migrate <container> <dst_node>
+        """
+        try:
+            args = _line.split(' ')
+            container = args[0]
+            dst_node = args[1]
+            for node in self._fie.absnode_map:
+                for c in self._fie.absnode_map[node].container_list:
+                    if c.name == container:
+                        self._fie.absnode_map[node].container_list.remove(c)
+                        c.destroy()
+                        # do migration
+                        self._fie.node(dst_node).dry_run(c)
+        except Exception as e:
+            print(e)
+            print("invalid arguments, expect migrate <container> <dst_node>")

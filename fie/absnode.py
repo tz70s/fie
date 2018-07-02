@@ -160,6 +160,15 @@ class AbstractionNode():
         self.container_list.append(c)
         self.pid_list.append(c.log_pid)
 
+    def dry_run(self, container):
+        container.cg_parent = self.cg
+        container.network = self.network
+        container.name_parent = self.name
+        container.count = len(self.container_list)
+        container.run()
+        self.container_list.append(container)
+        self.pid_list.append(container.log_pid)
+
     def stop(self, container):
         """Destroy specific container"""
         for c in self.container_list:
@@ -180,6 +189,7 @@ class AbstractionNode():
         for c in self.container_list:
             if c.name == container:
                 c.destroy()
+                self.container_list.remove(c)
                 return "Successful destory container : " + c.name
         return "The target container to destroy doesn't exist!"
 
