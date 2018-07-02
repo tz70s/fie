@@ -97,31 +97,32 @@ class AbstractionNode():
         create_link = 'ip link add ' + self.name + '-eth1' + \
             ' type veth peer name ' + self.name + '-dport'
         up_link = 'ip link set dev ' + self.name + '-eth1' + ' up'
-        set_ns = 'ip link set netns ' + self.pid + ' dev ' + self.name + '-eth1'
+        set_ns = 'ip link set netns ' + self.pid + ' dev ' + self.name + '-eth1' + ' up'
 
         call(create_link.split(' '))
         call(up_link.split(' '))
         call(set_ns.split(' '))
 
         self.cmd('ifconfig ' + self.name + '-eth1 ' + self.gw)
+        self.cmd('route add -net ' + self.ip_pool.split('/')
+                 [0] + ' netmask 255.255.255.0 gw ' + self.gw + ' dev ' + self.name + '-eth1')
 
     def createBridge(self):
         """Create docker network a.k.a linux bridge"""
 
+        # Up the parent interface, a.k.a xxx-dport
+        call(['ip', 'link', 'set', 'dev', self.name+'-dport', 'up'])
+
         # Set the network ip pool for new containers over specific network namespace
-        ipam_pool = docker.types.IPAMPool(subnet=self.ip_pool)
+        ipam_pool = docker.types.IPAMPool(subnet=self.ip_pool, gateway=self.gw)
         ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
 
         opts = {
-            'com.docker.network.bridge.name': self.network,
+            'parent': self.name+'-dport'
         }
 
         self.dockerbridge = self.docker_client.networks.create(
-            self.network, driver='bridge', ipam=ipam_config, options=opts)
-
-        # Patch veth with docker network bridges
-        call(['brctl', 'addif', self.network, self.name+'-dport'])
-        call(['ip', 'link', 'set', 'dev', self.name+'-dport', 'up'])
+            self.network, driver='macvlan', ipam=ipam_config, options=opts)
 
     def set_nat_rules(self):
         """NAT rules setting inner host/namespace"""
@@ -130,18 +131,14 @@ class AbstractionNode():
         # Postroute
         rules.append('iptables -t nat -A POSTROUTING -o ' +
                      self.name + '-eth0 -j MASQUERADE')
+
         # Conn
         rules.append('iptables -A FORWARD -i ' + self.name + '-eth0 -o ' +
                      self.name + '-eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT')
+
         # Accept
         rules.append('iptables -A FORWARD -i ' + self.name +
                      '-eth1 -o ' + self.name + '-eth0 -j ACCEPT')
-        # Allow all outcoming
-        rules.append('iptables -A OUTPUT -j ACCEPT')
-        # Allow all incoming
-        rules.append('iptables -A INPUT -j ACCEPT')
-        # Allow all forwarding
-        rules.append('iptables -A FORWARD -j ACCEPT')
 
         for rule in rules:
             self.cmd(rule)

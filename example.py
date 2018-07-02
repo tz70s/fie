@@ -123,11 +123,11 @@ Architecture:
         net.absnode_map['cloud'].run('phensley/docker-dns',
                                      name='dns',
                                      volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
-        net.absnode_map['cloud'].run('tz70s/reactive-city:0.1.0',
-                                     name='controller', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller', 'CLUSTER_HOST_IP': 'controller'}, command='-r controller -l cloud')
-
-        net.absnode_map['fog'].run('tz70s/reactive-city:0.1.0',
-                                   name='analytics', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller', 'CLUSTER_HOST_IP': 'analytics'}, command='-r analytics -l fog-west')
+        net.absnode_map['cloud'].run('tz70s/reactive-city:0.1.1',
+                                     name='controller', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'controller.docker'}, command='-r controller -l cloud')
+        
+        net.absnode_map['fog'].run('tz70s/reactive-city:0.1.1',
+                                   name='analytics', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'analytics.docker'}, command='-r analytics -l fog-west')
 
         FCLI(net)
 
