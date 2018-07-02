@@ -15,6 +15,7 @@ from fie import FIE
 import sys
 from cmd import Cmd
 from subprocess import call
+from copy import copy
 
 
 class FCLI(CLI):
@@ -55,6 +56,66 @@ class FCLI(CLI):
                         c.destroy()
                         # do migration
                         self._fie.node(dst_node).dry_run(c)
-        except Exception as e:
-            print(e)
+        except:
             print("invalid arguments, expect migrate <container> <dst_node>")
+
+    def do_scale(self, _line):
+        """
+        Scale one container to dst node.
+        scale <container> <container_new_name> <dst_node>
+        """
+        try:
+            args = _line.split(' ')
+            container = args[0]
+            new_container_name = args[1]
+            dst_node = args[2]
+            for node in self._fie.absnode_map:
+                for c in self._fie.absnode_map[node].container_list:
+                    if c.name == container:
+                        new_c = copy(c)
+                        new_c.params = copy(c.params)
+                        new_c.params['environment'] = {
+                            'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': new_container_name + '.docker'}
+                        new_c.name = new_container_name
+                        self._fie.node(dst_node).dry_run(new_c)
+        except Exception as e:
+            print(
+                "invalid arguments, expect scale <container> <container_new_name> <dst_node>")
+            print(e)
+
+    def do_routeall(self, _line):
+        """
+        Route all utility, by inserting static routes.
+        """
+        self._fie.routeAll()
+
+    def do_ps(self, _line):
+        """
+        Show all containers locate in where.
+        """
+        try:
+            for node in self._fie.absnode_map:
+                sys.stdout.write(node + " - ")
+                for c in self._fie.absnode_map[node].container_list:
+                    sys.stdout.write(c.name + ' ')
+                print('')
+        except Exception as e:
+            print("internal error occurred.")
+            print(e)
+
+    def do_destroy(self, _line):
+        """
+        Destroy container.
+        destroy <container_name>
+        """
+        try:
+            args = _line.split(' ')
+            container = args[0]
+            for node in self._fie.absnode_map:
+                for c in self._fie.absnode_map[node].container_list:
+                    if c.name == container:
+                        self._fie.absnode_map[node].container_list.remove(c)
+                        c.destroy()
+        except Exception as e:
+            print("internal error occurred.")
+            print(e)

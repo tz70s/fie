@@ -27,7 +27,7 @@ h1 runs on 10.0.0.1 along with 192.168.52.0/24 subnet and a node-server app
 h2 runs on 10.0.0.2 along with 192.168.53.0/24 subnet and a ubuntu app
 
 Each host can ping each other and works with the docker application on itself:
-    $h1 curl -qa 192.168.52.2:8181    
+    $h1 curl -qa 192.168.52.2:8181
     $h2 ping 192.168.53.2
 
 Testing for cross-hosts:
@@ -36,7 +36,7 @@ Testing for cross-hosts:
     $h2 route add -net 192.168.52.0 netmask 255.255.255.0 gw 10.0.0.1 dev h2-eth0
 
     # cross-hosts tests
-    $h2 curl -qa 192.168.52.2:8181    
+    $h2 curl -qa 192.168.52.2:8181
     $h1 ping 192.168.53.2
 
 """
@@ -112,22 +112,7 @@ class NetworkTopo(Topo):
 # Emulate the network topo
 
 
-def emulate():
-
-    print("""
-
-Demonstration of fog infrastructure emulation.
-    
-Architecture:
-    =======     =========
-    |     |     |       |---CONTAINER
-    |netns|=====|macvlan|---CONTAINER
-    |     |     |       |---CONTAINER
-    =======     =========
-    
-    """
-          )
-
+def failSafe(emulateFunc):
     # Set mininet settings
     topo = NetworkTopo()
     # The abstraction node automatically wrapped here.
@@ -136,37 +121,52 @@ Architecture:
     try:
         net.start()
         net.routeAll()
-
-        # Create DNS service in cloud.
-        net.node('cloud0').run('phensley/docker-dns',
-                               name='dns',
-                               volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
-
-        net.node('cloud1').run('tz70s/reactive-city:0.1.3',
-                               name='controller', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'controller.docker'}, command='-r controller -l cloud')
-
-        net.node('fog0').run('tz70s/reactive-city:0.1.3',
-                             name='partition', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'partition.docker'}, command='-r partition -l fog-west')
-
-        net.node('fog1').run('tz70s/reactive-city:0.1.3',
-                             name='analytics', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'analytics.docker'}, command='-r analytics -l fog-west')
-
-        net.node('fog1').run('tz70s/reactive-city:0.1.3',
-                             name='reflector', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'reflector.docker'}, command='-r reflector -l fog-west')
-
-        net.node('cloud1').run('tz70s/reactive-city:0.1.3',
-                               name='reflector-cloud', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'reflector-cloud.docker'}, command='-r reflector -l fog-west')
-
-        net.node('driver0').run('tz70s/reactive-city:0.1.3',
-                                name='simulator', dns=[implicit_dns()], environment={'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': 'simulator.docker'}, command='-r simulator -l fog-west', restart_policy={'Name': 'always'})
-
-        FCLI(net)
-
+        emulateFunc(net)
     finally:
         for n in net.absnode_map:
             net.absnode_map[n].destroyall()
         net.stop()
 
 
+def akkaHelper(name, role, location):
+    return {
+        'image': 'tz70s/reactive-city:0.1.4',
+        'name': name,
+        'dns': [implicit_dns()],
+        'environment': {'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': name+'.docker'},
+        'command': '-r ' + role + ' -l ' + location
+    }
+
+
+def emulate(net):
+
+    print("""
+
+Demonstration of fog infrastructure emulation.
+
+Architecture:
+    =======     =========
+    |     |     |       |---CONTAINER
+    |netns|=====|macvlan|---CONTAINER
+    |     |     |       |---CONTAINER
+    =======     =========
+
+    """
+          )
+
+    # Create DNS service in cloud.
+    net.node('cloud0').run('phensley/docker-dns',
+                           name='dns',
+                           volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
+
+    net.node('cloud1').run(**akkaHelper('controller', 'controller', 'cloud'))
+    net.node('fog0').run(**akkaHelper('partition', 'partition', 'fog-west'))
+    net.node('fog1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
+    net.node('fog1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
+    net.node('driver0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
+
+    FCLI(net)
+
+
 if __name__ == '__main__':
-    emulate()
+    failSafe(emulate)
