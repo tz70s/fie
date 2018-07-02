@@ -13,7 +13,7 @@ from mininet.nodelib import NAT
 from mininet.link import Link, Intf
 from absnode import AbstractionNode
 from env import Env
-
+import cli
 
 class FIE(Mininet):
     """FIE Class inherit from Mininet class as the core configuration"""
@@ -64,7 +64,7 @@ def emulation(topo, runner):
         net.start()
         net.routeAll()
         runner(net)
-        FCLI(net)
+        cli.FCLI(net)
 
     finally:
         for n in net.absnode_map:

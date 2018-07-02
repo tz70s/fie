@@ -152,4 +152,4 @@ Architecture:
     
 
 if __name__ == '__main__':
-    emulation(service_runner)
+    emulation(NetworkTopo(), service_runner)
