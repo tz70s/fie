@@ -14,7 +14,7 @@ from mininet.topo import Topo
 from mininet.util import quietRun
 from fie.absnode import AbstractionNode
 from fie.env import Env
-from fie.fie import FIE
+from fie.fie import FIE, emulation
 from fie.rslimit import RSLimitedHost
 import fie.utils
 from fie.utils import implicit_dns
@@ -112,22 +112,6 @@ class NetworkTopo(Topo):
 # Emulate the network topo
 
 
-def failSafe(emulateFunc):
-    # Set mininet settings
-    topo = NetworkTopo()
-    # The abstraction node automatically wrapped here.
-    net = FIE(topo=topo)
-
-    try:
-        net.start()
-        net.routeAll()
-        emulateFunc(net)
-    finally:
-        for n in net.absnode_map:
-            net.absnode_map[n].destroyall()
-        net.stop()
-
-
 def akkaHelper(name, role, location):
     return {
         'image': 'tz70s/reactive-city:0.1.4',
@@ -138,7 +122,7 @@ def akkaHelper(name, role, location):
     }
 
 
-def emulate(net):
+def service_runner(net):
 
     print("""
 
@@ -165,8 +149,7 @@ Architecture:
     net.node('fog1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
     net.node('driver0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
 
-    FCLI(net)
-
+    
 
 if __name__ == '__main__':
-    failSafe(emulate)
+    emulation(service_runner)

@@ -55,3 +55,18 @@ class FIE(Mininet):
 
     def node(self, index):
         return self.absnode_map[index]
+
+def emulation(topo, runner):
+    # The abstraction node automatically wrapped here.
+    net = FIE(topo=topo)
+
+    try:
+        net.start()
+        net.routeAll()
+        runner(net)
+        FCLI(net)
+
+    finally:
+        for n in net.absnode_map:
+            net.absnode_map[n].destroyall()
+        net.stop()
