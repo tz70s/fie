@@ -52,3 +52,6 @@ class FIE(Mininet):
                     continue
                 else:
                     self.absnode_map[host].route(self.absnode_map[another])
+
+    def node(self, index):
+        return self.absnode_map[index]

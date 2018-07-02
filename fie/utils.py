@@ -28,5 +28,5 @@ def checkIntf(intf):
 def implicit_dns():
     client = docker.APIClient(base_url='unix://var/run/docker.sock')
     details = client.inspect_container('dns')
-    ip = details['NetworkSettings']['Networks']['netns-cloud']['IPAddress']
+    ip = details['NetworkSettings']['Networks']['netns-cloud0']['IPAddress']
     return ip
