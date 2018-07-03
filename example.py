@@ -41,19 +41,16 @@ Testing for cross-hosts:
 
 """
 
-"""
-Custom network topology
-
-Usage
-1. Add switches
-2. Custom interface, the interfaces from peers are symmetric here
-3. Custom hosts
-4. Link switches and hosts
-
-"""
-
-
-class NetworkTopo(Topo):
+# Custom network topology
+# 
+# Usage:
+#
+# 1. Add switches
+# 2. Custom interface, the interfaces from peers are symmetric here
+# 3. Custom hosts
+# 4. Link switches and hosts
+#
+class NetworkTopology(Topo):
 
     " define network topo "
 
@@ -62,7 +59,7 @@ class NetworkTopo(Topo):
         # Add switches
         s1, s2, s3 = [self.addSwitch(s) for s in 's1', 's2', 's3']
 
-        # Custom interface
+        # Custom interfaces with bandwidth and delay limitation.
         DriverFogIntf = custom(TCIntf, bw=100, delay='10ms')
         FogCloudIntf = custom(TCIntf, bw=200, delay='100ms')
         InClusterIntf = custom(TCIntf, bw=1000)
@@ -77,25 +74,25 @@ class NetworkTopo(Topo):
         """
         Node capabilities settings
         """
-
-        cloud0 = self.addHost('cloud0', cls=custom(
+        cloud_node_0 = self.addHost('cloud_node_0', cls=custom(
             RSLimitedHost, cpu=0.5, mem=512))
-        cloud1 = self.addHost('cloud1', cls=custom(
+        cloud_node_1 = self.addHost('cloud_node_1', cls=custom(
             RSLimitedHost, cpu=0.5, mem=512))
 
-        fog0 = self.addHost('fog0', cls=custom(
+        fog_node_0 = self.addHost('fog_node_0', cls=custom(
             RSLimitedHost, cpu=0.3, mem=512))
-        fog1 = self.addHost('fog1', cls=custom(
+        fog_node_1 = self.addHost('fog_node_1', cls=custom(
             RSLimitedHost, cpu=0.3, mem=512))
 
-        driver0 = self.addHost('driver0', cls=custom(
+        # To simulate the vehicle data source.
+        vehicle_source_0 = self.addHost('vehicle_source_0', cls=custom(
             RSLimitedHost, cpu=0.3, mem=256))
-        driver1 = self.addHost('driver1', cls=custom(
+        vehicle_source_1 = self.addHost('vehicle_source_1', cls=custom(
             RSLimitedHost, cpu=0.3, mem=256))
 
         # Link switch s1 with cloud nodes.
-        self.addLink(s1, cloud0, intf=InClusterIntf)
-        self.addLink(s1, cloud1, intf=InClusterIntf)
+        self.addLink(s1, cloud_node_0, intf=InClusterIntf)
+        self.addLink(s1, cloud_node_1, intf=InClusterIntf)
 
         # s1 -- s2
         self.addLink(s1, s2, intf=FogCloudIntf)
@@ -103,26 +100,26 @@ class NetworkTopo(Topo):
         self.addLink(s2, s3, intf=DriverFogIntf)
 
         # Link switch s2 with fog nodes
-        self.addLink(s2, fog0, intf=InClusterIntf)
-        self.addLink(s2, fog1, intf=InClusterIntf)
+        self.addLink(s2, fog_node_0, intf=InClusterIntf)
+        self.addLink(s2, fog_node_1, intf=InClusterIntf)
 
-        self.addLink(s3, driver0, intf=InClusterIntf)
-        self.addLink(s3, driver1, intf=InClusterIntf)
+        self.addLink(s3, vehicle_source_0, intf=InClusterIntf)
+        self.addLink(s3, vehicle_source_1, intf=InClusterIntf)
 
 # Emulate the network topo
 
-
-def akkaHelper(name, role, location):
+# The kwargsHelper function build up dictionary for running containers -> eliminate redundant code.
+def kwargsHelper(name, role, location):
     return {
-        'image': 'tz70s/reactive-city:0.1.4',
+        'image': 'tz70s/reactive-city:0.1.5',
         'name': name,
         'dns': [implicit_dns()],
         'environment': {'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': name+'.docker'},
         'command': '-r ' + role + ' -l ' + location
     }
 
-
-def service_runner(net):
+# The service_deployment function is responsible for deploying containers in the emulated environment.
+def service_deployment(net):
 
     print("""
 
@@ -138,18 +135,23 @@ Architecture:
     """
           )
 
-    # Create DNS service in cloud.
-    net.node('cloud0').run('phensley/docker-dns',
+    # Run a DNS(Domain Name Service) container in cloud_node_0.
+    # This is common techniques in a microservice style,
+    # the domain address can be resolved to ip address in each services.
+    net.node('cloud_node_0').run('phensley/docker-dns',
                            name='dns',
                            volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
 
-    net.node('cloud1').run(**akkaHelper('controller', 'controller', 'cloud'))
-    net.node('fog0').run(**akkaHelper('partition', 'partition', 'fog-west'))
-    net.node('fog1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
-    net.node('fog1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
-    net.node('driver0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
+    # Run a controller node at the cloud_node_1, actor system role is set to controller, location is set to cloud.
+    # Same as following.
+    net.node('cloud_node_1').run(**akkaHelper('controller', 'controller', 'cloud'))
+    net.node('fog_node_0').run(**akkaHelper('partition', 'partition', 'fog-west'))
+    net.node('fog_node_1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
+    net.node('fog_node_1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
+    net.node('vehicle_source_0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
 
-    
 
 if __name__ == '__main__':
-    emulation(NetworkTopo(), service_runner)
+    # The emulation function take two arguments:
+    # 1. the build up topology, 2. the service_deployment function
+    emulation(NetworkTopology(), service_deployment)
