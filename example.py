@@ -146,11 +146,11 @@ Architecture:
 
     # Run a controller node at the cloud1, actor system role is set to controller, location is set to cloud.
     # Same as following.
-    net.node('cloud1').run(**akkaHelper('controller', 'controller', 'cloud'))
-    net.node('fog0').run(**akkaHelper('partition', 'partition', 'fog-west'))
-    net.node('fog1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
-    net.node('fog1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
-    net.node('car_src_0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
+    net.node('cloud1').run(**kwargsHelper('controller', 'controller', 'cloud'))
+    net.node('fog0').run(**kwargsHelper('partition', 'partition', 'fog-west'))
+    net.node('fog1').run(**kwargsHelper('analytics', 'analytics', 'fog-west'))
+    net.node('fog1').run(**kwargsHelper('reflector', 'reflector', 'fog-west'))
+    net.node('car_src_0').run(**kwargsHelper('simulator', 'simulator', 'fog-west'))
 
 
 if __name__ == '__main__':
