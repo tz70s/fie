@@ -71,28 +71,30 @@ class NetworkTopology(Topo):
         # patch hardware interface to switch s3
         # hardwareIntf = Intf( IntfName, node=s3 )
 
-        """
-        Node capabilities settings
-        """
-        cloud_node_0 = self.addHost('cloud_node_0', cls=custom(
+        # Node capabilities settings.
+        # cloud0 represented a node sits in cloud (datacenter), in whick has a larger capacity. 
+        cloud0 = self.addHost('cloud0', cls=custom(
             RSLimitedHost, cpu=0.5, mem=512))
-        cloud_node_1 = self.addHost('cloud_node_1', cls=custom(
+        # cloud1 is same as cloud0 as a node sits in cloud.
+        cloud1 = self.addHost('cloud1', cls=custom(
             RSLimitedHost, cpu=0.5, mem=512))
 
-        fog_node_0 = self.addHost('fog_node_0', cls=custom(
+        # fog0 represented a node in fog layer, with medium capacity.
+        fog0 = self.addHost('fog0', cls=custom(
             RSLimitedHost, cpu=0.3, mem=512))
-        fog_node_1 = self.addHost('fog_node_1', cls=custom(
+        fog1 = self.addHost('fog1', cls=custom(
             RSLimitedHost, cpu=0.3, mem=512))
 
         # To simulate the vehicle data source.
-        vehicle_source_0 = self.addHost('vehicle_source_0', cls=custom(
+        # These nodes will run vehicle data simulation and sends up to fog or cloud.
+        car_src_0 = self.addHost('car_src_0', cls=custom(
             RSLimitedHost, cpu=0.3, mem=256))
-        vehicle_source_1 = self.addHost('vehicle_source_1', cls=custom(
+        car_src_1 = self.addHost('car_src_1', cls=custom(
             RSLimitedHost, cpu=0.3, mem=256))
 
         # Link switch s1 with cloud nodes.
-        self.addLink(s1, cloud_node_0, intf=InClusterIntf)
-        self.addLink(s1, cloud_node_1, intf=InClusterIntf)
+        self.addLink(s1, cloud0, intf=InClusterIntf)
+        self.addLink(s1, cloud1, intf=InClusterIntf)
 
         # s1 -- s2
         self.addLink(s1, s2, intf=FogCloudIntf)
@@ -100,11 +102,11 @@ class NetworkTopology(Topo):
         self.addLink(s2, s3, intf=DriverFogIntf)
 
         # Link switch s2 with fog nodes
-        self.addLink(s2, fog_node_0, intf=InClusterIntf)
-        self.addLink(s2, fog_node_1, intf=InClusterIntf)
+        self.addLink(s2, fog0, intf=InClusterIntf)
+        self.addLink(s2, fog1, intf=InClusterIntf)
 
-        self.addLink(s3, vehicle_source_0, intf=InClusterIntf)
-        self.addLink(s3, vehicle_source_1, intf=InClusterIntf)
+        self.addLink(s3, car_src_0, intf=InClusterIntf)
+        self.addLink(s3, car_src_1, intf=InClusterIntf)
 
 # Emulate the network topo
 
@@ -135,20 +137,20 @@ Architecture:
     """
           )
 
-    # Run a DNS(Domain Name Service) container in cloud_node_0.
+    # Run a DNS(Domain Name Service) container in cloud0.
     # This is common techniques in a microservice style,
     # the domain address can be resolved to ip address in each services.
-    net.node('cloud_node_0').run('phensley/docker-dns',
+    net.node('cloud0').run('phensley/docker-dns',
                            name='dns',
                            volumes={'/var/run/docker.sock': {'bind': '/docker.sock', 'mode': 'rw'}})
 
-    # Run a controller node at the cloud_node_1, actor system role is set to controller, location is set to cloud.
+    # Run a controller node at the cloud1, actor system role is set to controller, location is set to cloud.
     # Same as following.
-    net.node('cloud_node_1').run(**akkaHelper('controller', 'controller', 'cloud'))
-    net.node('fog_node_0').run(**akkaHelper('partition', 'partition', 'fog-west'))
-    net.node('fog_node_1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
-    net.node('fog_node_1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
-    net.node('vehicle_source_0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
+    net.node('cloud1').run(**akkaHelper('controller', 'controller', 'cloud'))
+    net.node('fog0').run(**akkaHelper('partition', 'partition', 'fog-west'))
+    net.node('fog1').run(**akkaHelper('analytics', 'analytics', 'fog-west'))
+    net.node('fog1').run(**akkaHelper('reflector', 'reflector', 'fog-west'))
+    net.node('car_src_0').run(**akkaHelper('simulator', 'simulator', 'fog-west'))
 
 
 if __name__ == '__main__':
