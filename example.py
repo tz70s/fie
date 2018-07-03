@@ -117,7 +117,7 @@ def kwargsHelper(name, role, location):
         'name': name,
         'dns': [implicit_dns()],
         'environment': {'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': name+'.docker'},
-        'restart_policy': {'Name': 'always', 'MaximumRetryCount': 10},
+        'restart_policy': {'Name': 'always'},
         'command': '-r ' + role + ' -l ' + location
     }
 
