@@ -113,10 +113,11 @@ class NetworkTopology(Topo):
 # The kwargsHelper function build up dictionary for running containers -> eliminate redundant code.
 def kwargsHelper(name, role, location):
     return {
-        'image': 'tz70s/reactive-city:0.1.5',
+        'image': 'tz70s/reactive-city:0.1.6',
         'name': name,
         'dns': [implicit_dns()],
         'environment': {'CLUSTER_SEED_IP': 'controller.docker', 'CLUSTER_HOST_IP': name+'.docker'},
+        'restart_policy': {'Name': 'always', 'MaximumRetryCount': 10},
         'command': '-r ' + role + ' -l ' + location
     }
 
