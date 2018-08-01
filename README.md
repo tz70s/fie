@@ -51,3 +51,7 @@ export PYTHONPATH="$PYTHONPATH:/path/to/fie"
 # Run an example
 sudo ./example.py
 ```
+
+### Notice
+
+This project is no longer maintained, mail me if you need some help.
